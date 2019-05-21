@@ -12,8 +12,7 @@ from subprocess import CalledProcessError, call, check_call
 
 from setuptools import Command, find_packages, setup
 
-from pyof import __version__
-
+NAPP_VERSION = 1.0
 
 class SimpleCommand(Command):
     """Make Command implementation simpler."""
@@ -110,7 +109,7 @@ class Linter(SimpleCommand):
 
 
 setup(name='python-openflow',
-      version=__version__,
+      version=NAPP_VERSION,
       description='Library to parse and generate OpenFlow messages',
       url='http://github.com/kytos/python-openflow',
       author='Kytos Team',

@@ -1,0 +1,46 @@
+openapi: 3.0.0
+info:
+  title: kytos/kronos
+  version: latest
+  description: Persistence NApp with support to multiple times series databases backends.
+
+
+paths:
+  /v1/namespace/value:
+    post:
+      summary: Store data in some specific backend
+      operationId: save_data
+      requestBody:
+        description: Method to store data in a backend
+        required: true
+        content:
+          application/json:
+            schema:
+             type: object 
+      responses:
+        '400':
+            description: Bad request
+        '404':
+          description: Data not found
+          
+  /v1/namespace/start:
+    get:
+      summary: Retrieve and return data from a namespace
+      operationId: retrieve_data
+      responses:
+        '200':
+          description: Query result from a backend
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  example:
+                    - {
+                       "namespace": "text_value",
+                       "atribute": "value"
+                      }
+        '400':
+            description: Bad request
+        '404':
+          description: Data not found
