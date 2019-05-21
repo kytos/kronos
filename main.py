@@ -4,7 +4,6 @@ Napp to store itens along time
 """
 from flask import jsonify
 from napps.kytos.kronos import settings
-# from napps.kytos.Cronos import settings
 from napps.kytos.kronos.backends.csvbackend import CSVBackend
 from napps.kytos.kronos.backends.influx import InfluxBackend
 from kytos.core import KytosNApp, log, rest
@@ -42,18 +41,15 @@ class Main(KytosNApp):
     @rest('v1/<namespace>/<start>/<end>', methods=['DELETE'])
     def delete(self, namespace, start=None, end=None):
         """Delete the data in one of the backends."""
-        log.info(start)
-        log.info(end)
         result = self.backend.delete(namespace, start, end)
         if result in (400, 404):
             return jsonify({"response": "Not Found"}), 404
 
         return jsonify({"response": "Values deleted !"}), 200
 
-    @rest('v1/namespace/', methods=['GET'])
     @rest('v1/<namespace>/', methods=['GET'])
-    @rest('v1/<namespace>/<start>/', methods=['GET'])
-    @rest('v1/<namespace>/<end>/', methods=['GET'])
+    @rest('v1/<namespace>/start/<start>/', methods=['GET'])
+    @rest('v1/<namespace>/end/<end>/', methods=['GET'])
     @rest('v1/<namespace>/<start>/<end>', methods=['GET'])
     @rest('v1/<namespace>/<start>/<end>/interpol/<method>', methods=['GET'])
     @rest('v1/<namespace>/<start>/<end>/interpol/<method>/<filter>/',
@@ -64,10 +60,14 @@ class Main(KytosNApp):
             fill=None, group=None):
         """Retrieve the data from one of the backends."""
         result = self.backend.get(namespace, start, end, method, fill, group)
+
         if result == 400 or result is None:
             return jsonify({"response": 'Not Found'}), 404
 
-        return jsonify({"response": result}), 200
+        elif isinstance(result, tuple):  # time, value, code
+            return jsonify({"response": (result[0], result[1])}), 200
+
+        return jsonify(result), 200
 
     def execute(self):
         """Run after the setup method execution.

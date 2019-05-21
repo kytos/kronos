@@ -60,6 +60,16 @@ def _verify_namespace(namespace):
     return namespace, field
 
 
+def _parse_result_set(result, field):
+
+    if result:
+        time_value, value = zip(*[(res['time'], res[field]) for res in list(result)[0]])
+
+        return (time_value, value)
+
+    return None
+
+
 class InvalidQuery(Exception):
     """Exception thrown when the assembled query is not valid."""
 
@@ -132,12 +142,12 @@ class InfluxBackend:
         end = iso_format_validation(end)
         namespace, field = _verify_namespace(namespace)
         if not self._namespace_exists(namespace):
-            return None
+            return 400
         if validate_timestamp(start, end) == 400:
             return 400
         points = self._get_points(namespace, start, end,
                                   field, method, fill, group)
-        return points
+        return _parse_result_set(points, field)
 
     def _read_config(self, settings):
 
