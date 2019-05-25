@@ -47,14 +47,9 @@ class Main(KytosNApp):
 
         return jsonify({"response": "Values deleted !"}), 200
 
-   ''' @rest('v1/<namespace>/start/<start>/', methods=['GET'])
-    @rest('v1/<namespace>/end/<end>/', methods=['GET'])
-    @rest('v1/<namespace>/<start>/<end>', methods=['GET'])
-    @rest('v1/<namespace>/<start>/<end>/interpol/<method>', methods=['GET'])
-    @rest('v1/<namespace>/<start>/<end>/interpol/<method>/<filter>/',
-          methods=['GET'])'''
-    @rest('v1/<namespace>/time/<start>', methods=['GET'])
-    @rest('v1/<namespace>/time/<end>', methods=['GET'])
+    @rest('v1/<namespace>/', methods=['GET'])
+    @rest('v1/<namespace>/start/<start>', methods=['GET'])
+    @rest('v1/<namespace>/end/<end>', methods=['GET'])
     @rest('v1/<namespace>/<start>/<end>/interpol/<method>/<filter>/<group>',
           methods=['GET'])
     def get(self, namespace, start=None, end=None, method=None,
