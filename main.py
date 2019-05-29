@@ -47,14 +47,12 @@ class Main(KytosNApp):
 
         return jsonify({"response": "Values deleted !"}), 200
 
-    @rest('v1/<namespace>/', methods=['GET'])
-    @rest('v1/<namespace>/start/<start>', methods=['GET'])
-    @rest('v1/<namespace>/end/<end>', methods=['GET'])
-    @rest('v1/<namespace>/<start>/<end>/interpol/<method>/<filter>/<group>',
-          methods=['GET'])
+    @rest('v1/<namespace>/start=<start>&end=<end>', defaults={'start':None, 'end':None},
+        methods=['GET'])
     def get(self, namespace, start=None, end=None, method=None,
             fill=None, group=None):
         """Retrieve the data from one of the backends."""
+        log.info(type(end))
         result = self.backend.get(namespace, start, end, method, fill, group)
 
         if result == 400 or result is None:
