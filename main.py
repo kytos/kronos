@@ -2,7 +2,7 @@
 
 Napp to store itens along time
 """
-from flask import jsonify
+from flask import jsonify, request
 from napps.kytos.kronos import settings
 from napps.kytos.kronos.backends.csvbackend import CSVBackend
 from napps.kytos.kronos.backends.influx import InfluxBackend
@@ -47,14 +47,14 @@ class Main(KytosNApp):
 
         return jsonify({"response": "Values deleted !"}), 200
 
-    @rest('v1/<namespace>/start=<start>&end=<end>', defaults={'start':None, 'end':None},
-        methods=['GET'])
+
+    @rest('v1/<namespace>', methods=['GET']) # /teste2.out/?start=0&end=100000
     def get(self, namespace, start=None, end=None, method=None,
             fill=None, group=None):
         """Retrieve the data from one of the backends."""
-        log.info(type(end))
+        start = request.args.get('start')
+        end = request.args.get('end')
         result = self.backend.get(namespace, start, end, method, fill, group)
-
         if result == 400 or result is None:
             return jsonify({"response": 'Not Found'}), 404
 
