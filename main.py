@@ -4,7 +4,6 @@ Napp to store itens along time
 """
 from flask import jsonify
 from napps.kytos.kronos import settings
-# from napps.kytos.Cronos import settings
 from napps.kytos.kronos.backends.csvbackend import CSVBackend
 from napps.kytos.kronos.backends.influx import InfluxBackend
 from kytos.core import KytosNApp, log, rest
@@ -76,9 +75,9 @@ class Main(KytosNApp):
            self.backend.save(event.content['namespace'],
                              event.content['value'],
                              event.content['timestamp'])
-        except KeyError:
+        except Exception as exc:
             result = None
-            error = None
+            error = (exc.__class__, exc.args)
         
         self._execute_callback(event, result, error)
 
@@ -89,9 +88,9 @@ class Main(KytosNApp):
         try:
            self.backend.get(event.content['namespace'],
                             event.content['timestamp'])
-        except KeyError:
+        except Exception as exc:
             result = None
-            error = None
+            error = (exc.__class__, exc.args)
         
         self._execute_callback(event, result, error)
 
@@ -101,9 +100,9 @@ class Main(KytosNApp):
         try:
            self.backend.delete(event.content['namespace'],
                                event.content['timestamp'])
-        except KeyError:
-           result = None
-            error = None
+        except Exception as exc:
+            result = None
+            error = (exc.__class__, exc.args)
         
         self._execute_callback(event, result, error)
     
