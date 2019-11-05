@@ -7,12 +7,17 @@ from abc import abstractmethod
 # Disabling checks due to https://github.com/PyCQA/pylint/issues/73
 # pylint: disable=import-error,no-name-in-module
 from distutils.command.clean import clean
+import json
 # pylint: enable=import-error,no-name-in-module
 from subprocess import CalledProcessError, call, check_call
 
 from setuptools import Command, find_packages, setup
 
-NAPP_VERSION = 1.0
+NAPP_NAME = 'kronos'
+
+with open('kytos.json', 'r') as kytos_json:
+    NAPP_VERSION = json.loads(kytos_json.read())['version']
+    kytos_json.close()
 
 class SimpleCommand(Command):
     """Make Command implementation simpler."""
@@ -108,7 +113,7 @@ class Linter(SimpleCommand):
             exit(-1)
 
 
-setup(name='python-openflow',
+setup(name=f'kytos_{NAPP_NAME}',
       version=NAPP_VERSION,
       description='Library to parse and generate OpenFlow messages',
       url='http://github.com/kytos/python-openflow',
