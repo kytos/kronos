@@ -1,12 +1,11 @@
-"""InfluxDB backend"""
+"""InfluxDB backend."""
 import re
 
-from influxdb import InfluxDBClient
-from influxdb import exceptions
-
+from influxdb import InfluxDBClient, exceptions
 from kytos.core import log
-from napps.kytos.kronos.utils import (validate_timestamp, now,
-                                      iso_format_validation)
+
+from napps.kytos.kronos.utils import (iso_format_validation, now,
+                                      validate_timestamp)
 
 
 def _query_assemble(clause, namespace, start, end, field=None,
@@ -59,6 +58,15 @@ def _verify_namespace(namespace):
         namespace = '.'.join(namespace.split('.')[:-1])
     return namespace, field
 
+def _parse_result_set(result, field):
+
+    if result:
+        time_value, value = zip(*[(res['time'],
+                                res[field]) for res in list(result)[0]])
+
+        return (time_value, value)
+
+    return None
 
 class InvalidQuery(Exception):
     """Exception thrown when the assembled query is not valid."""
@@ -66,7 +74,9 @@ class InvalidQuery(Exception):
 
 class InfluxBackend:
     """This Backend is responsible to the connection with InfluxDB."""
+
     def __init__(self, settings):
+        """Read config and start client."""
         self._read_config(settings)
         self._start_client()
 
@@ -132,12 +142,12 @@ class InfluxBackend:
         end = iso_format_validation(end)
         namespace, field = _verify_namespace(namespace)
         if not self._namespace_exists(namespace):
-            return None
+            return 400
         if validate_timestamp(start, end) == 400:
             return 400
         points = self._get_points(namespace, start, end,
                                   field, method, fill, group)
-        return points
+        return _parse_result_set(points, field)
 
     def _read_config(self, settings):
 

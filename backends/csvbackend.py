@@ -3,8 +3,8 @@ import os
 
 import pandas as pd
 
-from napps.kytos.kronos.utils import (validate_timestamp, now,
-                                       iso_format_validation)
+from napps.kytos.kronos.utils import (iso_format_validation, now,
+                                      validate_timestamp)
 
 
 def _put_value(value, store_value, timestamp=None):
@@ -33,7 +33,7 @@ def _config_path(file_path):
 
 
 def _make_search(start, end, dataframe):
-    '''Return part of the dataframe'''
+    """Return part of the dataframe."""
     end = end or now()
     start = start or 0
 
@@ -49,12 +49,13 @@ def _make_search(start, end, dataframe):
 
 
 class CSVBackend:
-    """CSV backend class. Defines methods to save,
-    retrieve and delete data along time."""
+    """CSV backend class. Defines methods to save, retrieve and delete data."""
 
     def __init__(self, settings):
         """Define the a path in case the user does not pass one.
-        Also defines the user getting from the backend."""
+
+        Also defines the user getting from the backend.
+        """
         self._read_config(settings)
 
     def _read_config(self, settings):
@@ -67,7 +68,7 @@ class CSVBackend:
         self.user = params['USER']
 
     def save(self, namespace, value, timestamp=None):
-        """ Store the data in a .csv given a folder. """
+        """Store the data in a .csv given a folder."""
         store_value = pd.DataFrame(columns=['Value', 'Timestamp'])
         _put_value(value, store_value, timestamp)
 
@@ -83,7 +84,7 @@ class CSVBackend:
                                mode='w', index=False)
 
     def delete(self, file, start=None, end=None):
-        """ Delete a instances of the csv file"""
+        """Delete a instances of the csv file."""
         dataframe, file = self._load_file(file)
         search = _make_search(start, end, dataframe)
         data_to_drop = dataframe[search]
@@ -95,14 +96,14 @@ class CSVBackend:
 
     def get(self, file, start=None, end=None, method=None,
             fill=None, group=None):
-        """Retrieve data from a csv file"""
+        """Retrieve data from a csv file."""
         dataframe, file = self._load_file(file)
         search = _make_search(start, end, dataframe)
 
         return dataframe[search]
 
     def _load_file(self, file):
-        """load the file passing the name + the path."""
+        """Load the file passing the name + the path."""
         try:
             if '.csv' not in file:
                 file = file + '.csv'

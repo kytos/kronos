@@ -1,32 +1,27 @@
-"""Utility features for all backends"""
-from datetime import datetime
+"""Utility features for all backends."""
 import re
+from datetime import datetime
 
 from kytos.core import log
 
 
 def now():
-    '''Return timestamp in ISO-8601 format'''
+    """Return timestamp in ISO-8601 format."""
     return datetime.utcnow().isoformat()
 
 
 def validate_timestamp(start, end):
-    """Method use for validate the time stamp.
-    Avoiding that end be smaller than start.
-    """
+    """Validate the time stamp avoiding that the end be smaller than start."""
     if start is not None and end is not None:
         start, end = str(start), str(end)
         if start > end:
             log.error("Invalid Data Range: {}, {}".format(start, end))
             return 400
+    return None
 
 
 def iso_format_validation(timestamp):
-    '''
-        Verify if a timestamp is in isoformat.
-        If it's not, try to convert it.
-    '''
-
+    """Verify if a timestamp is in isoformat.If it's not, try to convert it."""
     if timestamp is None:
         return timestamp
 
