@@ -1,9 +1,10 @@
-"""Main module of kytos/Cronos Kytos Network Application.
+"""Main module of kytos/kronos Kytos Network Application.
 
 Napp to store itens along time
 """
 from flask import jsonify, request
 from kytos.core import KytosNApp, log, rest
+from kytos.core.helpers import listen_to
 
 from napps.kytos.kronos import settings
 from napps.kytos.kronos.backends.csvbackend import CSVBackend

@@ -155,11 +155,11 @@ class DevelopMode(develop):
         links = INSTALLED_PATH / 'kytos'
         links.mkdir(parents=True, exist_ok=True)
         code = CURRENT_DIR
-        src = links / 'of_core'
+        src = links / 'kronos'
         symlink_if_different(src, code)
 
         (ENABLED_PATH / 'kytos').mkdir(parents=True, exist_ok=True)
-        dst = ENABLED_PATH / Path('kytos', 'of_core')
+        dst = ENABLED_PATH / Path('kytos', 'kronos')
         symlink_if_different(dst, src)
 
     # @staticmethod
