@@ -77,6 +77,8 @@ class Main(KytosNApp):
             self.backend.save(event.content['namespace'],
                               event.content['value'],
                               event.content['timestamp'])
+            result = None
+            error = ''
         except Exception as exc:
             result = None
             error = (exc.__class__, exc.args)
