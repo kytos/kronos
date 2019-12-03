@@ -2,12 +2,26 @@
 import re
 from datetime import datetime
 
-from kytos.core import log
+
+class InvalidNamespaceError(Exception):
+    """Exception thrown when the provided namespace is not valid."""
+
+
+class ValueConvertError(Exception):
+    """Exception thrown when it is not possible convert the value to stored."""
+
+
+class NamespaceNotExistsError(Exception):
+    """Exception thrown when the provided namespace does not exist."""
+
+
+class TimestampRangeError(Exception):
+    """Exception thrown when the provided range timestamp is not valid."""
 
 
 def now():
     """Return timestamp in ISO-8601 format."""
-    return datetime.utcnow().isoformat()
+    return datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
 
 
 def validate_timestamp(start, end):
@@ -15,19 +29,31 @@ def validate_timestamp(start, end):
     if start is not None and end is not None:
         start, end = str(start), str(end)
         if start > end:
-            log.error(f'Error: Invalid Data Range \'{start}, {end}\'')
             return False
     return True
 
 
-def iso_format_validation(timestamp):
-    """Verify if a timestamp is in isoformat. If it's not try to convert it."""
-    if timestamp is None:
-        log.error(f'Error: Timestamp value \'None\' is not valid argument.')
-        return False
+def convert_to_iso(timestamp):
+    """Convert a value to ISO-8601 format."""
+    try:
+        timestamp = float(timestamp)
+        iso = '%Y-%m-%dT%H:%M:%SZ'
+        timestamp = datetime.utcfromtimestamp(timestamp).strftime(iso)
+        return timestamp
+    except ValueError:
+        error = f'Error: Timestamp value \'{timestamp}\' is not convertible'\
+                 ' to ISO-8601 format.'
+        raise ValueConvertError(error)
+    except OverflowError:
+        error = f'Error: Timestamp \'{timestamp}\' float value is too '\
+                 'large to be used as datetime.'
+        raise ValueConvertError(error)
 
-    if not isinstance(timestamp, str):
-        timestamp = str(timestamp)
+
+def iso_format_validation(timestamp):
+    """Verify if a timestamp is in isoformat."""
+    if timestamp is None:
+        return False
 
     first_part = "(?:[1-9][0-9]*)?[0-9]{4})-(1[0-2]|0[1-9])-"
     second_part = "(3[01]|0[1-9]|[12][0-9])T(2[0-3]|[01][0-9]):([0-5][0-9]):"
@@ -41,17 +67,7 @@ def iso_format_validation(timestamp):
     match_iso = re.compile(regex_iso).match
     match_date = re.compile(regex_date).match
 
-    if match_iso(timestamp) is None and match_date(timestamp) is None:
-        try:
-            timestamp = float(timestamp)
-            iso = '%Y-%m-%dT%H:%M:%SZ'
-            timestamp = datetime.utcfromtimestamp(timestamp).strftime(iso)
-        except ValueError:
-            log.error(f'Error: Timestamp value \'{timestamp}\' is not at '
-                      'ISO-8601 format.')
-            return False
-        except OverflowError:
-            log.error(f'Error: Timestamp \'{timestamp}\' float value is too '
-                      'large to be used as datetime.')
-            return False
-    return timestamp
+    if not (match_iso(timestamp) or match_date(timestamp)):
+        return False
+
+    return True
