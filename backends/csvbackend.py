@@ -1,39 +1,28 @@
 """Backend that save data along time using a csv file"""
+import csv
 import os
 
-import pandas as pd
-
-from napps.kytos.kronos.utils import (validate_timestamp, now,
-                                       iso_format_validation)
-
-
-def _put_value(value, store_value, timestamp=None):
-    """Save a value in a dataframe."""
-    store_value.loc[0, 'Value'] = value
-    store_value.loc[0, 'Timestamp'] = timestamp or now()
+from pathlib import Path
+from napps.kytos.kronos.utils import (iso_format_validation, now,
+                                      validate_timestamp)
 
 
 def _config_path(file_path):
 
-    if file_path is None:
-        if 'data' not in os.listdir():
-            os.system('mkdir data')
-        file_path = 'data/'
+    if not Path(file_path).exists:
+        path = Path(file_path)
+        path.mkdir(parents=True)
+        file_path = str(path)
+    elif file_path == '':
+        file_path = '/'
     else:
-        if file_path == '':
-            file_path = '/'
-        elif file_path[-1] != '/':
-            file_path = file_path + '/'
-        try:
-            os.listdir(file_path)
-        except (FileNotFoundError, IOError):
-            raise Exception("Invalid File or Directory:{}" .format(file_path))
+        file_path = str(Path(file_path))
 
     return file_path
 
 
-def _make_search(start, end, dataframe):
-    '''Return part of the dataframe'''
+def _make_search(start, end, fname):
+    """Return the result of the search in csv file."""
     end = end or now()
     start = start or 0
 
@@ -41,10 +30,13 @@ def _make_search(start, end, dataframe):
     start = iso_format_validation(start)
     end = iso_format_validation(end)
 
-    iso = '%Y-%m-%dT%H:%M:%SZ'
-    search = dataframe.Timestamp.dt.strftime(iso)
-    search = search.between(start, end)
+    search = []
 
+    with open(fname, 'r', newline='') as csvfile:
+        csvreader = csv.reader(csvfile, delimiter=',')
+        for row in csvreader:
+            if (start <= row[1] <= end):
+                search.append(row)
     return search
 
 
@@ -58,7 +50,7 @@ class CSVBackend:
         self._read_config(settings)
 
     def _read_config(self, settings):
-        params = {'PATH': None, 'USER': 'default_user'}
+        params = {'PATH': 'data', 'USER': 'default_user'}
         config = settings.BACKENDS.get('CSV')
         for key in params:
             params[key] = config.get(key, params[key])
@@ -68,52 +60,53 @@ class CSVBackend:
 
     def save(self, namespace, value, timestamp=None):
         """ Store the data in a .csv given a folder. """
-        store_value = pd.DataFrame(columns=['Value', 'Timestamp'])
-        _put_value(value, store_value, timestamp)
+        rows = []
 
-        f_name = self.user + '_' + namespace + '.csv'
-        if self.path != '/':
-            f_name = self.path + f_name
+        fname = f"{self.user}_{namespace}.csv"
+        fname = str(Path(self.path, fname))
+ 
+        if not os.path.exists(fname):
+            rows.append(['Value', 'Timestamp'])
+        
+        rows.append([value, timestamp])
 
-        if f_name in os.listdir(self.path):
-            store_value.to_csv(f_name, sep=',', header=False,
-                               mode='a', index=False)
-        else:
-            store_value.to_csv(f_name, sep=',', header=True,
-                               mode='w', index=False)
+        csvfile = open(fname, 'a', newline='')
+            
+        csvwriter = csv.writer(csvfile, delimiter=',')    
+        csvwriter.writerows(rows)
+        csvfile.close()
 
-    def delete(self, file, start=None, end=None):
-        """ Delete a instances of the csv file"""
-        dataframe, file = self._load_file(file)
-        search = _make_search(start, end, dataframe)
-        data_to_drop = dataframe[search]
-        dataframe.drop(data_to_drop.index, inplace=True)
-        if self.path != '/':
-            file = self.path + file
+    def delete(self, namespace, fname, start=None, end=None):
+        """ Delete a instances of the csv file."""
 
-        dataframe.to_csv(file, sep=',', header=True, mode='w', index=False)
+        fname = f"{self.user}_{namespace}.csv"
+        fname = str(Path(self.path, fname))
 
-    def get(self, file, start=None, end=None, method=None,
+        search = _make_search(start, end, fname)
+
+        result = []
+
+        with open(fname, 'r+', newline='') as csvfile:
+            csvreader = csv.reader(csvfile, delimiter=',')
+
+            for row in csvreader:
+                if row not in search:
+                    result.append(row)
+            
+            csvwriter = csv.writer(csvfile, delimiter=',')
+
+            for row in result:
+                csvwriter.writerow(row)
+
+        csvfile.close()
+
+    def get(self, namespace, fname, start=None, end=None, method=None,
             fill=None, group=None):
         """Retrieve data from a csv file"""
-        dataframe, file = self._load_file(file)
-        search = _make_search(start, end, dataframe)
 
-        return dataframe[search]
+        fname = f"{self.user}_{namespace}.csv"
+        fname = str(Path(self.path, fname))
 
-    def _load_file(self, file):
-        """load the file passing the name + the path."""
-        try:
-            if '.csv' not in file:
-                file = file + '.csv'
+        search = _make_search(start, end, fname)
 
-            if self.path != '/':
-                file = self.path + file
-
-            dataframe = pd.read_csv(file, sep=',')
-            dataframe['Timestamp'] = pd.to_datetime(dataframe['Timestamp'],
-                                                    errors='coerce')
-            return dataframe, file
-
-        except (FileNotFoundError, IOError):
-            raise Exception("File Not Found")
+        return search
