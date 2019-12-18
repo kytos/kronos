@@ -1,34 +1,48 @@
 """Setup script.
 
-Run "python3 setup --help-commands" to list all available commands and their
+Run "python3 setup.py --help-commands" to list all available commands and their
 descriptions.
 """
+import os
+import shutil
+import sys
 from abc import abstractmethod
-# Disabling checks due to https://github.com/PyCQA/pylint/issues/73
-# pylint: disable=import-error,no-name-in-module
-from distutils.command.clean import clean
-import json
-# pylint: enable=import-error,no-name-in-module
-from subprocess import CalledProcessError, call, check_call
+from pathlib import Path
+from subprocess import call, check_call
 
-from setuptools import Command, find_packages, setup
+from setuptools import Command, setup
+from setuptools.command.develop import develop
+from setuptools.command.egg_info import egg_info
+from setuptools.command.install import install
+
+if 'bdist_wheel' in sys.argv:
+    raise RuntimeError("This setup.py does not support wheels")
+
+# Paths setup with virtualenv detection
+if 'VIRTUAL_ENV' in os.environ:
+    BASE_ENV = Path(os.environ['VIRTUAL_ENV'])
+else:
+    BASE_ENV = Path('/')
 
 NAPP_NAME = 'kronos'
+NAPP_VERSION = '0.1'
 
-with open('kytos.json', 'r') as kytos_json:
-    NAPP_VERSION = json.loads(kytos_json.read())['version']
-    kytos_json.close()
+# Kytos var folder
+VAR_PATH = BASE_ENV / 'var' / 'lib' / 'kytos'
+# Path for enabled NApps
+ENABLED_PATH = VAR_PATH / 'napps'
+# Path to install NApps
+INSTALLED_PATH = VAR_PATH / 'napps' / '.installed'
+CURRENT_DIR = Path('.').resolve()
+
+# NApps enabled by default
+CORE_NAPPS = []
+
 
 class SimpleCommand(Command):
     """Make Command implementation simpler."""
 
     user_options = []
-
-    def __init__(self, *args, **kwargs):
-        """Store arguments so it's possible to call other commands later."""
-        super().__init__(*args, **kwargs)
-        self.__args = args
-        self.__kwargs = kwargs
 
     @abstractmethod
     def run(self):
@@ -36,22 +50,15 @@ class SimpleCommand(Command):
 
         Use *call* instead of *check_call* to ignore failures.
         """
-        pass
-
-    def run_command(self, command_class):
-        """Run another command with same __init__ arguments."""
-        command_class(*self.__args, **self.__kwargs).run()
 
     def initialize_options(self):
-        """Set defa ult values for options."""
-        pass
+        """Set default values for options."""
 
     def finalize_options(self):
         """Post-process options."""
-        pass
 
 
-class Cleaner(clean):
+class Cleaner(SimpleCommand):
     """Custom clean command to tidy up the project root."""
 
     description = 'clean build, dist, pyc and egg from package and docs'
@@ -71,19 +78,21 @@ class TestCoverage(SimpleCommand):
 
     def run(self):
         """Run unittest quietly and display coverage report."""
-        cmd = 'coverage3 run setup.py test && coverage3 report'
-        check_call(cmd, shell=True)
+        cmd = 'coverage3 run -m unittest && coverage3 report'
+        call(cmd, shell=True)
 
 
-class DocTest(SimpleCommand):
-    """Run documentation tests."""
+class Linter(SimpleCommand):
+    """Code linters."""
 
-    description = 'run documentation tests'
+    description = 'lint Python source code'
 
     def run(self):
-        """Run doctests using Sphinx Makefile."""
-        cmd = 'make -C docs/ default doctest'
-        check_call(cmd, shell=True)
+        """Run yala."""
+        print('Yala is running. It may take several seconds...')
+        # This shall be a check_call when all linter issues are fixed
+        #check_call('yala backends/ tests/ *.py', shell=True)
+        call('yala backends/ tests/ *.py', shell=True)
 
 
 class CITest(SimpleCommand):
@@ -93,50 +102,133 @@ class CITest(SimpleCommand):
 
     def run(self):
         """Run unit tests with coverage, doc tests and linter."""
-        for command in TestCoverage, DocTest, Linter:
-            self.run_command(command)
+        cmds = ['python3.6 setup.py ' + cmd
+                for cmd in ('coverage', 'lint')]
+        cmd = ' && '.join(cmds)
+        check_call(cmd, shell=True)
 
 
-class Linter(SimpleCommand):
-    """Lint Python source code."""
+class KytosInstall:
+    """Common code for all install types."""
 
-    description = 'lint Python source code'
+    @staticmethod
+    def enable_core_napps():
+        """Enable a NAPP by creating a symlink."""
+        (ENABLED_PATH / 'kytos').mkdir(parents=True, exist_ok=True)
+        for napp in CORE_NAPPS:
+            napp_path = Path('kytos', napp)
+            src = ENABLED_PATH / napp_path
+            dst = INSTALLED_PATH / napp_path
+            symlink_if_different(src, dst)
+
+
+class InstallMode(install):
+    """Create files in var/lib/kytos."""
+
+    description = 'To install NApps, use kytos-utils. Devs, see "develop".'
 
     def run(self):
-        """Run yala."""
-        print('Yala is running. It may take several seconds...')
-        try:
-            check_call('yala pyof setup.py', shell=True)
-            print('No linter error found.')
-        except CalledProcessError:
-            print('Linter check failed. Fix the error(s) above and try again.')
-            exit(-1)
+        """Direct users to use kytos-utils to install NApps."""
+        print(self.description)
+
+
+class EggInfo(egg_info):
+    """Prepare files to be packed."""
+
+    def run(self):
+        """Build css."""
+        self._install_deps_wheels()
+        super().run()
+
+    @staticmethod
+    def _install_deps_wheels():
+        """Python wheels are much faster (no compiling)."""
+        print('Installing dependencies...')
+        check_call([sys.executable, '-m', 'pip', 'install', '-r',
+                    'requirements/run.in'])
+
+
+class DevelopMode(develop):
+    """Recommended setup for kytos-napps developers.
+
+    Instead of copying the files to the expected directories, a symlink is
+    created on the system aiming the current source code.
+    """
+
+    description = 'Install NApps in development mode'
+
+    def run(self):
+        """Install the package in a developer mode."""
+        super().run()
+        if self.uninstall:
+            shutil.rmtree(str(ENABLED_PATH), ignore_errors=True)
+        else:
+            self._create_folder_symlinks()
+            # self._create_file_symlinks()
+            KytosInstall.enable_core_napps()
+
+    @staticmethod
+    def _create_folder_symlinks():
+        """Symlink to all Kytos NApps folders.
+
+        ./napps/kytos/napp_name will generate a link in
+        var/lib/kytos/napps/.installed/kytos/napp_name.
+        """
+        links = INSTALLED_PATH / 'kytos'
+        links.mkdir(parents=True, exist_ok=True)
+        code = CURRENT_DIR
+        src = links / NAPP_NAME
+        symlink_if_different(src, code)
+
+        (ENABLED_PATH / 'kytos').mkdir(parents=True, exist_ok=True)
+        dst = ENABLED_PATH / Path('kytos', NAPP_NAME)
+        symlink_if_different(dst, src)
+
+    @staticmethod
+    def _create_file_symlinks():
+        """Symlink to required files."""
+        src = ENABLED_PATH / '__init__.py'
+        dst = CURRENT_DIR / 'napps' / '__init__.py'
+        symlink_if_different(src, dst)
+
+
+def symlink_if_different(path, target):
+    """Force symlink creation if it points anywhere else."""
+    # print(f"symlinking {path} to target: {target}...", end=" ")
+    if not path.exists():
+        # print(f"path doesn't exist. linking...")
+        path.symlink_to(target)
+    elif not path.samefile(target):
+        # print(f"path exists, but is different. removing and linking...")
+        # Exists but points to a different file, so let's replace it
+        path.unlink()
+        path.symlink_to(target)
 
 
 setup(name=f'kytos_{NAPP_NAME}',
       version=NAPP_VERSION,
-      description='Library to parse and generate OpenFlow messages',
-      url='http://github.com/kytos/python-openflow',
+      description='Core NApps developed by the Kytos Team',
+      url=f'http://github.com/kytos/{NAPP_NAME}',
       author='Kytos Team',
-      author_email='devel@lists.kytos.io',
+      author_email='of-ng-dev@ncc.unesp.br',
       license='MIT',
-      test_suite='tests',
-      include_package_data=True,
+      install_requires=[],
       extras_require={
           'dev': [
               'coverage',
-              'tox',
               'pip-tools',
               'yala',
+              'tox',
           ],
       },
-      packages=find_packages(exclude=['tests']),
       cmdclass={
-          'ci': CITest,
           'clean': Cleaner,
+          'ci': CITest,
           'coverage': TestCoverage,
-          'doctest': DocTest,
-          'lint': Linter
+          'develop': DevelopMode,
+          'install': InstallMode,
+          'lint': Linter,
+          'egg_info': EggInfo,
       },
       zip_safe=False,
       classifiers=[
@@ -144,5 +236,4 @@ setup(name=f'kytos_{NAPP_NAME}',
           'Operating System :: POSIX :: Linux',
           'Programming Language :: Python :: 3.6',
           'Topic :: System :: Networking',
-          'Topic :: Software Development :: Libraries'
       ])
