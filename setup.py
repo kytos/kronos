@@ -220,6 +220,9 @@ setup(name=f'kytos_{NAPP_NAME}',
               'yala',
               'tox',
           ],
+          'influxdb': [
+              'influxdb'
+          ]
       },
       cmdclass={
           'clean': Cleaner,
