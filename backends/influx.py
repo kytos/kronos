@@ -2,8 +2,8 @@
 import re
 
 from influxdb import InfluxDBClient, exceptions
-
 from kytos.core import log
+
 from napps.kytos.kronos.utils import (InvalidNamespaceError,
                                       NamespaceNotExistsError,
                                       TimestampRangeError, ValueConvertError,
@@ -40,12 +40,12 @@ def _query_assemble(clause, namespace, start, end, field=None,
         clause += f' GROUP BY time({group})'
     if fill is not None:
         clause += f' fill({fill})'
-    log.error(clause)
     return clause
 
 
 def _validate_namespace(namespace):
     if not isinstance(namespace, str) or not re.match(r'\S+', namespace):
+        error = (f'Error. Namespace should be a string.')
         raise TypeError
 
     if 'kytos.kronos' not in namespace:
@@ -108,7 +108,8 @@ class InfluxBackend:
             raise NamespaceNotExistsError(error)
 
         if start is None and end is None:
-            raise ValueError
+            error = 'Start and end value should not be \'None\'.'
+            raise ValueError(error)
 
         if iso_format_validation(start) is False and start is not None:
             start = convert_to_iso(start)
@@ -116,7 +117,7 @@ class InfluxBackend:
             end = convert_to_iso(end)
 
         if validate_timestamp(start, end) is False:
-            error = 'Error to get values due invalid namespace'
+            error = 'Error to get values due end value is smaller than start.'
             raise TimestampRangeError(error)
 
         points = self._get_points(namespace, start, end,
@@ -131,7 +132,7 @@ class InfluxBackend:
             end = convert_to_iso(end)
 
         if _validate_namespace(namespace):
-            namespace, field = _extract_field(namespace)
+            namespace, _ = _extract_field(namespace)
         else:
             log.error('Error in delete method due invalid namespace value.')
             return
