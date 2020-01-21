@@ -1,12 +1,14 @@
-"""InfluxDB backend"""
+"""InfluxDB backend."""
 import re
 
-from influxdb import InfluxDBClient
-from influxdb import exceptions
-
+from influxdb import InfluxDBClient, exceptions
 from kytos.core import log
-from napps.kytos.kronos.utils import (validate_timestamp, now,
-                                      iso_format_validation)
+
+from napps.kytos.kronos.utils import (InvalidNamespaceError,
+                                      NamespaceNotExistsError,
+                                      TimestampRangeError, ValueConvertError,
+                                      convert_to_iso, iso_format_validation,
+                                      now, validate_timestamp)
 
 
 def _query_assemble(clause, namespace, start, end, field=None,
@@ -17,46 +19,46 @@ def _query_assemble(clause, namespace, start, end, field=None,
             clause += f' * FROM {namespace}'
         else:
             if method is None:
-                clause += f" {field} FROM {namespace}"
+                clause += f' {field} FROM "{namespace}"'
             else:
-                clause += f" {method}({field}) FROM {namespace}"
+                clause += f' {method}({field}) FROM "{namespace}"'
 
     elif clause.upper() == 'DELETE':
-        clause += f' FROM {namespace}'
+        clause += f' FROM "{namespace}"'
     else:
         log.error(f'Error. Invalid clause "{clause}".')
 
-    time_clause = " WHERE time "
+    time_clause = ' WHERE time '
     if start is not None:
-        clause += f"{time_clause} >'{str(start)}'"
+        clause += f'{time_clause} >= \'{str(start)}\''
         if end is not None:
-            clause += f" AND time <'{str(end)}'"
+            clause += f' AND time <=\'{str(end)}\''
     elif start is None and end is not None:
-        clause += f"{time_clause} < '{str(end)}'"
+        clause += f'{time_clause} <= \'{str(end)}\''
 
     if group is not None:
-        clause += f" GROUP BY time({group})"
+        clause += f' GROUP BY time({group})'
     if fill is not None:
-        clause += f" fill({fill})"
-
+        clause += f' fill({fill})'
     return clause
 
 
-def _verify_namespace(namespace):
-    field = None
-
-    if namespace is None:
-        log.error("Error. Namespace cannot be NoneType.")
-        return 400, 400
-
+def _validate_namespace(namespace):
     if not isinstance(namespace, str) or not re.match(r'\S+', namespace):
-        log.error(f"Error. Namespace '{namespace}' most be a string."
-                  f" Not {type(namespace).__name__}.")
-        return 404, 404
+        error = (f'Error. Namespace should be a string.')
+        raise TypeError
 
-    if '.' in namespace:
-        field = namespace.split('.')[-1]
-        namespace = '.'.join(namespace.split('.')[:-1])
+    if 'kytos.kronos' not in namespace:
+        error = (f'Error. Namespace \'{namespace}\' most have the format '
+                 '\'kytos.kronos.*\'')
+        raise InvalidNamespaceError(error)
+
+    return True
+
+
+def _extract_field(namespace):
+    field = namespace.split('.')[-1]
+    namespace = '.'.join(namespace.split('.')[:-1])
     return namespace, field
 
 
@@ -66,32 +68,25 @@ class InvalidQuery(Exception):
 
 class InfluxBackend:
     """This Backend is responsible to the connection with InfluxDB."""
+
     def __init__(self, settings):
+        """Read config from settings file and start a InfluxBackend client."""
         self._read_config(settings)
         self._start_client()
 
     def save(self, namespace, value, timestamp=None):
-        """Insert the data on influxdb.
+        """Insert data on influxdb."""
+        if _validate_namespace(namespace):
+            namespace, field = _extract_field(namespace)
 
-        In this case (InfluxDB), the last namespace will be the table.
-
-        timestamp must be on ISO-8601 format.
-        """
-        if re.match(r'[+]?(\d+(\.\d*)?|\.\d+)([eE][-+]?\d+)?', value):
+        try:
             value = float(value)
-        elif not isinstance(value, bool) and isinstance(value, int):
-            value = float(value)
+        except ValueError:
+            raise ValueConvertError
 
         timestamp = timestamp or now()
-        timestamp = iso_format_validation(timestamp)
-        if timestamp == 400:
-            return timestamp
-
-        namespace, field = _verify_namespace(namespace)
-        if isinstance(namespace, tuple):
-            namespace = namespace[0]
-        if namespace in (400, 404):
-            return namespace
+        if iso_format_validation(timestamp) is False:
+            start = convert_to_iso(start)
 
         data = [{
             'measurement': namespace,
@@ -101,43 +96,58 @@ class InfluxBackend:
 
         return self._write_endpoints(data)
 
-    def delete(self, namespace, start=None, end=None):
-        """Delete the entire database.
-
-        start and end most be a timestamp
-        """
-        start = iso_format_validation(start)
-        end = iso_format_validation(end)
-        namespace = _verify_namespace(namespace)
-        if isinstance(namespace, tuple):
-            namespace = namespace[0]
-
-        if namespace in (400, 404):
-            return namespace
-
-        if not self._namespace_exists(namespace):
-            log.error("Namespace {} does not exist".format(namespace))
-            return 400
-
-        if validate_timestamp(start, end) == 400:
-            return 400
-
-        self._delete_points(namespace, start, end)
-        return 200
-
     def get(self, namespace, start=None, end=None,
             method=None, fill=None, group=None):
         """Make a query to retrieve something in the database."""
-        start = iso_format_validation(start)
-        end = iso_format_validation(end)
-        namespace, field = _verify_namespace(namespace)
+        if _validate_namespace(namespace):
+            namespace, field = _extract_field(namespace)
+
         if not self._namespace_exists(namespace):
-            return None
-        if validate_timestamp(start, end) == 400:
-            return 400
+            error = (f'Error to get values because namespace \'{namespace}\''
+                     'does not exist.')
+            raise NamespaceNotExistsError(error)
+
+        if start is None and end is None:
+            error = 'Start and end value should not be \'None\'.'
+            raise ValueError(error)
+
+        if iso_format_validation(start) is False and start is not None:
+            start = convert_to_iso(start)
+        if iso_format_validation(end) is False and end is not None:
+            end = convert_to_iso(end)
+
+        if validate_timestamp(start, end) is False:
+            error = 'Error to get values due end value is smaller than start.'
+            raise TimestampRangeError(error)
+
         points = self._get_points(namespace, start, end,
                                   field, method, fill, group)
         return points
+
+    def delete(self, namespace, start=None, end=None):
+        """Delete data in influxdb. Start and end most be a timestamp."""
+        if iso_format_validation(start) is False and start is not None:
+            start = convert_to_iso(start)
+        if iso_format_validation(end) is False and end is not None:
+            end = convert_to_iso(end)
+
+        if _validate_namespace(namespace):
+            namespace, _ = _extract_field(namespace)
+        else:
+            log.error('Error in delete method due invalid namespace value.')
+            return
+
+        if not self._namespace_exists(namespace):
+            log.error(f'Error to delete because namespace \'{namespace}\' does'
+                      'not exist.')
+            return
+
+        if validate_timestamp(start, end) is False:
+            log.error('Error to delete due invalid namespace')
+            return
+
+        self._delete_points(namespace, start, end)
+        return
 
     def _read_config(self, settings):
 
@@ -152,7 +162,7 @@ class InfluxBackend:
             params[key] = config.get(key, params[key])
 
         if not params['DBNAME']:
-            log.error("Error. Must specify database name.")
+            log.error('Error. Must specify database name.')
 
         self._host = params['HOST']
         self._port = params['PORT']
@@ -179,12 +189,8 @@ class InfluxBackend:
             self._client.write_points(data)
         except exceptions.InfluxDBClientError as error:
             log.error(error)
-            return 400
         except InvalidQuery:
-            log.error("Error inserting data to InfluxDB.")
-            return 400
-
-        return 200
+            log.error('Error inserting data to InfluxDB.')
 
     def _get_database(self):
         """Verify if a database exists."""
@@ -207,24 +213,26 @@ class InfluxBackend:
         query = _query_assemble('SELECT', name, start, end, field,
                                 method, group, fill)
         try:
-            return self._client.query(query, chunked=True, chunk_size=0)
-        except InvalidQuery:
-            log.error("Error. Query {} not valid" .format(query))
-            return 400
+            results = self._client.query(query, chunked=True, chunk_size=0).raw
+            results = results['series'][0]['values']
+            return results
+        except KeyError:
+            error = (f'Error. Query {query} not valid')
+            raise InvalidQuery(error)
 
     def _namespace_exists(self, namespace):
 
         if namespace is None:
-            log.error("Invalid namespace.")
-            return 400
+            log.error('Invalid namespace.')
+            return False
 
         all_nspace = self._client.get_list_measurements()
         if not all_nspace:
-            log.error("Error. There are no valid database.")
-            return 400
+            log.error('Error. There are no valid database.')
+            return False
         exist = list(filter(lambda x: x['name'] == namespace, all_nspace))
         if not exist:
-            log.error("Required namespace does not exist.")
-            return 400
+            log.error('Required namespace does not exist.')
+            return False
 
         return True
