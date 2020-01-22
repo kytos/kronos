@@ -3,10 +3,12 @@
 Napp to store itens along time
 """
 from flask import jsonify
+
+from kytos.core import KytosNApp, log, rest
+from kytos.core.helpers import listen_to
 from napps.kytos.kronos import settings
 from napps.kytos.kronos.backends.csvbackend import CSVBackend
 from napps.kytos.kronos.backends.influx import InfluxBackend
-from kytos.core import KytosNApp, log, rest
 
 
 class Main(KytosNApp):
@@ -14,6 +16,7 @@ class Main(KytosNApp):
 
     This class is the entry point for this napp.
     """
+
     backend = None
 
     def setup(self):
@@ -60,7 +63,7 @@ class Main(KytosNApp):
     @rest('v1/<namespace>/<start>/<end>/interpol/<method>/<filter>/<group>',
           methods=['GET'])
     def rest_get(self, namespace, start=None, end=None, method=None,
-            fill=None, group=None):
+                 fill=None, group=None):
         """Retrieve the data from one of the backends."""
         result = self.backend.get(namespace, start, end, method, fill, group)
         if result == 400 or result is None:
@@ -70,42 +73,41 @@ class Main(KytosNApp):
 
     @listen_to('kytos.kronos.save')
     def event_save(self, event):
-        """Save the data in one of the backends"""
+        """Save the data in one of the backends."""
         try:
-           self.backend.save(event.content['namespace'],
-                             event.content['value'],
+            self.backend.save(event.content['namespace'],
+                              event.content['value'],
+                              event.content['timestamp'])
+        except Exception as exc:
+            result = None
+            error = (exc.__class__, exc.args)
+
+        self._execute_callback(event, result, error)
+
+    @listen_to('kytos.kronos.get')
+    def event_get(self, event):
+        """Get the data in one of the backends."""
+        try:
+            self.backend.get(event.content['namespace'],
                              event.content['timestamp'])
         except Exception as exc:
             result = None
             error = (exc.__class__, exc.args)
-        
-        self._execute_callback(event, result, error)
 
-
-    @listen_to('kytos.kronos.get')
-    def event_get(self, event):
-        """Get the data in one of the backends"""
-        try:
-           self.backend.get(event.content['namespace'],
-                            event.content['timestamp'])
-        except Exception as exc:
-            result = None
-            error = (exc.__class__, exc.args)
-        
         self._execute_callback(event, result, error)
 
     @listen_to('kytos.kronos.delete')
     def event_delete(self, event):
-
+        """Delete data in one of the backends."""
         try:
-           self.backend.delete(event.content['namespace'],
-                               event.content['timestamp'])
+            self.backend.delete(event.content['namespace'],
+                                event.content['timestamp'])
         except Exception as exc:
             result = None
             error = (exc.__class__, exc.args)
-        
+
         self._execute_callback(event, result, error)
-    
+
     @staticmethod
     def _execute_callback(event, data, error):
         """Run the callback function for event calls to the NApp."""

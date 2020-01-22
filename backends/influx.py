@@ -2,8 +2,8 @@
 import re
 
 from influxdb import InfluxDBClient, exceptions
-from kytos.core import log
 
+from kytos.core import log
 from napps.kytos.kronos.utils import (InvalidNamespaceError,
                                       NamespaceNotExistsError,
                                       TimestampRangeError, ValueConvertError,
