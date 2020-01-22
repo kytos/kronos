@@ -2,6 +2,8 @@
 Overview
 ########
 
+|License| |Build| |Coverage| |Quality|
+
 Attention!
 
 THIS IS AN EXPERIMENTAL NAPP AND ITS EVENTS, METHODS AND STRUCTURES MAY CHANGE A LOT ON THE NEXT FEW DAYS/WEEKS, USE IT AT YOUR OWN DISCERNMENT
@@ -48,3 +50,16 @@ kytos.kronos.delete
 Event requesting to delete data in a namespace from backend.
 
 
+.. TAGs
+
+.. |License| image:: https://img.shields.io/github/license/kytos/kytos.svg
+   :target: https://github.com/kytos/kronos/blob/master/LICENSE
+.. |Build| image:: https://scrutinizer-ci.com/g/kytos/kronos/badges/build.png?b=master
+  :alt: Build status
+  :target: https://scrutinizer-ci.com/g/kytos/kronos/?branch=master
+.. |Coverage| image:: https://scrutinizer-ci.com/g/kytos/kronos/badges/coverage.png?b=master
+  :alt: Code coverage
+  :target: https://scrutinizer-ci.com/g/kytos/kronos/?branch=master
+.. |Quality| image:: https://scrutinizer-ci.com/g/kytos/kronos/badges/quality-score.png?b=master
+  :alt: Code-quality score
+  :target: https://scrutinizer-ci.com/g/kytos/kronos/?branch=master
