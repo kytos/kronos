@@ -1,8 +1,8 @@
-"""Backend that save data along time using a csv file"""
+"""Backend that save data along time using a csv file."""
 import csv
 import os
-
 from pathlib import Path
+
 from napps.kytos.kronos.utils import (iso_format_validation, now,
                                       validate_timestamp)
 
@@ -35,18 +35,16 @@ def _make_search(start, end, fname):
     with open(fname, 'r', newline='') as csvfile:
         csvreader = csv.reader(csvfile, delimiter=',')
         for row in csvreader:
-            if (start <= row[1] <= end):
+            if start <= row[1] <= end:
                 search.append(row)
     return search
 
 
 class CSVBackend:
-    """CSV backend class. Defines methods to save,
-    retrieve and delete data along time."""
+    """CSV backend class defines methods to store, retrieve and delete data."""
 
     def __init__(self, settings):
-        """Define the a path in case the user does not pass one.
-        Also defines the user getting from the backend."""
+        """Define the user and a path in case the user does not pass one."""
         self._read_config(settings)
 
     def _read_config(self, settings):
@@ -59,26 +57,25 @@ class CSVBackend:
         self.user = params['USER']
 
     def save(self, namespace, value, timestamp=None):
-        """ Store the data in a .csv given a folder. """
+        """Store the data in a .csv given a folder."""
         rows = []
 
         fname = f"{self.user}_{namespace}.csv"
         fname = str(Path(self.path, fname))
- 
+
         if not os.path.exists(fname):
             rows.append(['Value', 'Timestamp'])
-        
+
         rows.append([value, timestamp])
 
         csvfile = open(fname, 'a', newline='')
-            
-        csvwriter = csv.writer(csvfile, delimiter=',')    
+
+        csvwriter = csv.writer(csvfile, delimiter=',')
         csvwriter.writerows(rows)
         csvfile.close()
 
     def delete(self, namespace, fname, start=None, end=None):
-        """ Delete a instances of the csv file."""
-
+        """Delete a instances of the csv file."""
         fname = f"{self.user}_{namespace}.csv"
         fname = str(Path(self.path, fname))
 
@@ -92,7 +89,7 @@ class CSVBackend:
             for row in csvreader:
                 if row not in search:
                     result.append(row)
-            
+
             csvwriter = csv.writer(csvfile, delimiter=',')
 
             for row in result:
@@ -102,8 +99,7 @@ class CSVBackend:
 
     def get(self, namespace, fname, start=None, end=None, method=None,
             fill=None, group=None):
-        """Retrieve data from a csv file"""
-
+        """Retrieve data from a csv file."""
         fname = f"{self.user}_{namespace}.csv"
         fname = str(Path(self.path, fname))
 

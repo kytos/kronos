@@ -49,6 +49,7 @@ def convert_to_iso(timestamp):
         log.error(f'Error: Timestamp \'{timestamp}\' float value is too '
                   'large to be used as datetime.')
 
+
 def iso_format_validation(timestamp):
     """Verify if a timestamp is in isoformat."""
     if timestamp is None:
