@@ -9,7 +9,7 @@ from napps.kytos.kronos.utils import (iso_format_validation, now,
 
 def _config_path(file_path):
 
-    if not Path(file_path).exists:
+    if not Path(file_path).exists():
         path = Path(file_path)
         path.mkdir(parents=True)
         file_path = str(path)
