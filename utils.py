@@ -2,8 +2,6 @@
 import re
 from datetime import datetime
 
-from kytos.core import log
-
 
 class InvalidNamespaceError(Exception):
     """Exception thrown when the provided namespace is not valid."""
@@ -43,11 +41,14 @@ def convert_to_iso(timestamp):
         timestamp = datetime.utcfromtimestamp(timestamp).strftime(iso)
         return timestamp
     except ValueError:
-        log.error(f'Error: Timestamp value \'{timestamp}\' is not convertible'
-                  ' to ISO-8601 format.')
+        error = f'Error: Timestamp value \'{timestamp}\' is not convertible'\
+                 ' to ISO-8601 format.'
+        raise ValueConvertError(error)
     except OverflowError:
-        log.error(f'Error: Timestamp \'{timestamp}\' float value is too '
-                  'large to be used as datetime.')
+        error = f'Error: Timestamp \'{timestamp}\' float value is too '\
+                 'large to be used as datetime.'
+        raise ValueConvertError(error)
+
 
 def iso_format_validation(timestamp):
     """Verify if a timestamp is in isoformat."""
