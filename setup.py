@@ -91,7 +91,7 @@ class Linter(SimpleCommand):
         """Run yala."""
         print('Yala is running. It may take several seconds...')
         # This shall be a check_call when all linter issues are fixed
-        #check_call('yala backends/ tests/ *.py', shell=True)
+        # check_call('yala backends/ tests/ *.py', shell=True)
         call('yala backends/ tests/ *.py', shell=True)
 
 
