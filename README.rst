@@ -27,7 +27,7 @@ To install this NApp, run:
 Configuring
 ###########
 
-Settings are stored in the ``settings.py``file. The options there may be different according to the backend you are using. For example, the ``InfluxDB`` backend will use ``PORT``, ``PASS``, ``HOST`` and ``DBNAME``, while ``CSVBackend`` will just ignore those.
+Settings are stored in the ``settings.py`` file. The options there may be different according to the backend you are using. For example, the ``InfluxDB`` backend will use ``PORT``, ``PASS``, ``HOST`` and ``DBNAME``, while ``CSVBackend`` will just ignore those.
 
 ######
 Events
@@ -46,5 +46,3 @@ Event requesting data in a namespace from backend.
 kytos.kronos.delete
 ===================
 Event requesting to delete data in a namespace from backend.
-
-
