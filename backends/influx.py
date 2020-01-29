@@ -82,11 +82,12 @@ class InfluxBackend:
         try:
             value = float(value)
         except ValueError:
-            raise ValueConvertError
+            error = f'Is not possible convert value \'{value}\' to float.'
+            raise ValueConvertError(error)
 
         timestamp = timestamp or now()
         if iso_format_validation(timestamp) is False:
-            start = convert_to_iso(start)
+            timestamp = convert_to_iso(timestamp)
 
         data = [{
             'measurement': namespace,
