@@ -1,0 +1,22 @@
+build:
+    environment:
+        python: 3.6.3
+        postgresql: false
+        redis: false
+    dependencies:
+        before:
+            - pip install coverage
+    tests:
+        override:
+            -
+                command: 'tox'
+                coverage:
+                    file: '.coverage'
+                    config_file: '.coveragerc'
+                    format: 'py-cc'
+    nodes:
+        analysis:
+            tests:
+                override:
+                    - py-scrutinizer-run
+        tests: true

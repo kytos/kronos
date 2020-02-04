@@ -50,8 +50,6 @@ def convert_to_iso(timestamp):
         raise ValueConvertError(error)
 
 
-
-
 def iso_format_validation(timestamp):
     """Verify if a timestamp is in isoformat."""
     if timestamp is None:
