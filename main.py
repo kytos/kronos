@@ -13,7 +13,7 @@ from napps.kytos.kronos.utils import InvalidNamespaceError, ValueConvertError
 
 
 class Main(KytosNApp):
-    """Main class of kytos/Cronos NApp.
+    """Main class of kytos/kronos NApp.
 
     This class is the entry point for this napp.
     """

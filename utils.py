@@ -61,7 +61,7 @@ def iso_format_validation(timestamp):
                  "[0-9])"
 
     regex = first_part + second_part + third_part
-    regex_iso = r'^(-?'+regex+'?$'
+    regex_iso = r'^(-?' + regex + '?$'
     regex_date = r'^([12]\d{3}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01]))'
 
     match_iso = re.compile(regex_iso).match

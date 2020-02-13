@@ -1,10 +1,10 @@
 """InfluxDB backend."""
 import re
 
-from kytos.core import log
-
+# pylint: disable=import-error,wrong-import-order
 from influxdb import InfluxDBClient, exceptions
-
+from kytos.core import log
+# pylint: disable=import-error,wrong-import-order
 from napps.kytos.kronos.utils import (InvalidNamespaceError,
                                       NamespaceNotExistsError,
                                       TimestampRangeError, ValueConvertError,

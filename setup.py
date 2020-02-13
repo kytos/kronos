@@ -212,7 +212,9 @@ setup(name=f'kytos_{NAPP_NAME}',
       author='Kytos Team',
       author_email='of-ng-dev@ncc.unesp.br',
       license='MIT',
-      install_requires=[],
+      install_requires=[line.strip()
+                        for line in open("requirements/run.in").readlines()
+                        if not line.startswith('#')],
       extras_require={
           'dev': [
               'coverage',
