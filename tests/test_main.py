@@ -12,7 +12,9 @@ from napps.kytos.kronos.main import Main
 
 class TestMainKronos(TestCase):
     """Class to test kytos/kronos."""
+
     def setUp(self):
+        """Start NApp thread."""
         self.napp = Main(get_controller_mock())
 
     @mock.patch('napps.kytos.kronos.main.InfluxBackend.save')
