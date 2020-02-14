@@ -8,7 +8,7 @@ import shutil
 import sys
 from abc import abstractmethod
 from pathlib import Path
-from subprocess import call, check_call
+from subprocess import CalledProcessError, call, check_call
 
 from setuptools import Command, setup
 from setuptools.command.develop import develop
@@ -74,7 +74,7 @@ class Cleaner(SimpleCommand):
 class TestCoverage(SimpleCommand):
     """Display test coverage."""
 
-    description = 'run unit tests and display code coverage'
+    description = 'Run unit tests and display code coverage'
 
     def run(self):
         """Run unittest quietly and display coverage report."""
@@ -85,20 +85,23 @@ class TestCoverage(SimpleCommand):
 class Linter(SimpleCommand):
     """Code linters."""
 
-    description = 'lint Python source code'
+    description = 'Lint Python source code'
 
     def run(self):
         """Run yala."""
         print('Yala is running. It may take several seconds...')
-        # This shall be a check_call when all linter issues are fixed
-        # check_call('yala backends/ tests/ *.py', shell=True)
-        call('yala backends/ tests/ *.py', shell=True)
+        try:
+            check_call('yala *.py backends/*.py tests/*.py', shell=True)
+            print('No linter error found.')
+        except CalledProcessError:
+            print('Linter check failed. Fix the error(s) above and try again.')
+            exit(-1)
 
 
 class CITest(SimpleCommand):
     """Run all CI tests."""
 
-    description = 'run all CI tests: unit and doc tests, linter'
+    description = 'Run all CI tests: unit and doc tests, linter'
 
     def run(self):
         """Run unit tests with coverage, doc tests and linter."""
