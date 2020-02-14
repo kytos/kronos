@@ -1,10 +1,10 @@
-"""Module to test the napp kytos/kronos."""
+"""Unit tests for the Kronos NApp."""
 import os
 import sys
 from pathlib import Path
 
 BASE_ENV = Path(os.environ.get('VIRTUAL_ENV', '/'))
 
-KRONOS_PATH = BASE_ENV / 'var/lib/kytos/napps/..'
+NAPPS_DIR = BASE_ENV / 'var/lib/kytos/'
 
-sys.path.insert(0, str(KRONOS_PATH))
+sys.path.insert(0, str(NAPPS_DIR))

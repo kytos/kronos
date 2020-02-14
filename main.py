@@ -9,10 +9,11 @@ from kytos.core.helpers import listen_to
 from napps.kytos.kronos import settings
 from napps.kytos.kronos.backends.csvbackend import CSVBackend
 from napps.kytos.kronos.backends.influx import InfluxBackend
+from napps.kytos.kronos.utils import InvalidNamespaceError, ValueConvertError
 
 
 class Main(KytosNApp):
-    """Main class of kytos/Cronos NApp.
+    """Main class of kytos/kronos NApp.
 
     This class is the entry point for this napp.
     """
@@ -32,11 +33,12 @@ class Main(KytosNApp):
     @rest('v1/<namespace>/<value>/<timestamp>', methods=['POST'])
     def rest_save(self, namespace, value, timestamp=None):
         """Save the data in one of the backends."""
-        result = self.backend.save(namespace, value, timestamp)
-        if result in (400, 404):
-            return jsonify({"response": "Not Found"}), result
+        try:
+            self.backend.save(namespace, value, timestamp)
+        except (InvalidNamespaceError, ValueConvertError) as exc:
+            return jsonify({"response": str(exc)})
 
-        return jsonify({"response": "Value saved !"}), 201
+        return jsonify({"response": "Value saved !"})
 
     @rest('v1/<namespace>/', methods=['DELETE'])
     @rest('v1/<namespace>/start/<start>', methods=['DELETE'])
@@ -114,9 +116,9 @@ class Main(KytosNApp):
         try:
             event.content['callback'](event, data, error)
         except KeyError:
-            log.error(f'Event {event!r} without callback function!')
+            log.error(f'Event {event} without callback function!')
         except TypeError as exception:
-            log.error(f"Bad callback function {event.content['callback']}!")
+            log.error(f'Bad callback function {event.content["callback"]}!')
             log.error(exception)
 
     def execute(self):
