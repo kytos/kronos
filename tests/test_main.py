@@ -17,7 +17,7 @@ class TestMainKronos(TestCase):
 
     @mock.patch('napps.kytos.kronos.main.InfluxBackend.save')
     def test_restsave_success_with_influx(self, mock_main):
-        """Test succes in method rest_save."""
+        """Test success in method rest_save."""
         namespace = 'kytos.kronos.telemetry.switches.1.interfaces.232.bytes_in'
         value = '123'
         timestamp = None
