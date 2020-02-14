@@ -78,7 +78,7 @@ class TestCoverage(SimpleCommand):
 
     def run(self):
         """Run unittest quietly and display coverage report."""
-        cmd = 'coverage3 run -m unittest && coverage3 report'
+        cmd = 'coverage3 run --source=. setup.py test && coverage3 report'
         call(cmd, shell=True)
 
 
