@@ -13,10 +13,10 @@ from napps.kytos.kronos.main import Main
 class TestMainKronos(TestCase):
     """Class to test kytos/kronos."""
     def setUp(self):
-        self.napp = Main(get_controller_mock)
+        self.napp = Main(get_controller_mock())
 
     @mock.patch('napps.kytos.kronos.main.InfluxBackend.save')
-    def test_restsave_success_with_influx(self, mock_main):
+    def test_rest_save_success_with_influx(self, mock_influx_save):
         """Test success in method rest_save."""
         namespace = 'kytos.kronos.telemetry.switches.1.interfaces.232.bytes_in'
         value = '123'
@@ -25,4 +25,4 @@ class TestMainKronos(TestCase):
         app = Flask(__name__)
         with app.app_context():
             self.napp.rest_save(namespace, value, timestamp)
-            mock_main.assert_called_with(namespace, value, timestamp)
+            mock_influx_save.assert_called_with(namespace, value, timestamp)
