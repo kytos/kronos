@@ -36,9 +36,10 @@ class Main(KytosNApp):
         try:
             self.backend.save(namespace, value, timestamp)
         except (InvalidNamespaceError, ValueConvertError) as exc:
-            return jsonify({"response": str(exc)})
+            exc_name = exc.__class__.__name__
+            return jsonify({'response': str(exc), 'exc_name': exc_name})
 
-        return jsonify({"response": "Value saved !"})
+        return jsonify({'response': 'Value saved !'})
 
     @rest('v1/<namespace>/', methods=['DELETE'])
     @rest('v1/<namespace>/start/<start>', methods=['DELETE'])
