@@ -9,7 +9,9 @@ from kytos.core.helpers import listen_to
 from napps.kytos.kronos import settings
 from napps.kytos.kronos.backends.csvbackend import CSVBackend
 from napps.kytos.kronos.backends.influx import InfluxBackend
-from napps.kytos.kronos.utils import InvalidNamespaceError, ValueConvertError
+from napps.kytos.kronos.utils import (InvalidNamespaceError,
+                                      NamespaceNotExistsError,
+                                      TimestampRangeError, ValueConvertError)
 
 
 class Main(KytosNApp):
@@ -47,13 +49,13 @@ class Main(KytosNApp):
     @rest('v1/<namespace>/<start>/<end>', methods=['DELETE'])
     def rest_delete(self, namespace, start=None, end=None):
         """Delete the data in one of the backends."""
-        log.info(start)
-        log.info(end)
-        result = self.backend.delete(namespace, start, end)
-        if result in (400, 404):
-            return jsonify({"response": "Not Found"}), 404
+        try:
+            self.backend.delete(namespace, start, end)
+        except (InvalidNamespaceError, ValueConvertError, TimestampRangeError,
+                NamespaceNotExistsError) as exc:
+            return jsonify({'response': str(exc)})
 
-        return jsonify({"response": "Values deleted !"}), 200
+        return jsonify({'response': 'Values deleted.'})
 
     @rest('v1/namespace/', methods=['GET'])
     @rest('v1/<namespace>/', methods=['GET'])
@@ -68,11 +70,14 @@ class Main(KytosNApp):
     def rest_get(self, namespace, start=None, end=None, method=None,
                  fill=None, group=None):
         """Retrieve the data from one of the backends."""
-        result = self.backend.get(namespace, start, end, method, fill, group)
-        if result == 400 or result is None:
-            return jsonify({"response": 'Not Found'}), 404
+        try:
+            result = self.backend.get(namespace, start, end, method, fill,
+                                      group)
+        except (InvalidNamespaceError, ValueConvertError, TimestampRangeError,
+                NamespaceNotExistsError) as exc:
+            return jsonify({'response': str(exc)})
 
-        return jsonify({"response": result}), 200
+        return jsonify({'response': result})
 
     @listen_to('kytos.kronos.save')
     def event_save(self, event):
