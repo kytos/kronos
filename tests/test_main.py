@@ -73,3 +73,20 @@ class TestMainKronos(TestCase):
             self.napp.rest_get(namespace, start, end)
             mock_influx_get.assert_called_with(namespace, start, end, None,
                                                None, None)
+
+    @mock.patch('napps.kytos.kronos.main.InfluxBackend.save')
+    def test_event_save_success_with_influx(self, mock_influx_save):
+        """Test success in method rest_save."""
+        namespace = 'kytos.kronos.telemetry.switches.1.interfaces.232.bytes_in'
+        value = '123'
+        timestamp = None
+
+        event = mock.MagicMock()
+        event.content = {'namespace': namespace,
+                         'value': value,
+                         'timestamp': timestamp}
+
+        app = Flask(__name__)
+        with app.app_context():
+            self.napp.event_save(event)
+            mock_influx_save.assert_called_with(namespace, value, timestamp)

@@ -86,9 +86,11 @@ class Main(KytosNApp):
             self.backend.save(event.content['namespace'],
                               event.content['value'],
                               event.content['timestamp'])
-        except Exception as exc:
+            result = 'Value saved.'
+            error = None
+        except (InvalidNamespaceError, ValueConvertError) as exc:
             result = None
-            error = (exc.__class__, exc.args)
+            error = (str(exc), exc.__class__.__name__)
 
         self._execute_callback(event, result, error)
 

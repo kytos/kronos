@@ -137,7 +137,7 @@ class InfluxBackend:
             namespace, _ = _extract_field(namespace)
 
         if not self._namespace_exists(namespace):
-            error = (f'Error to delete because namespace \'{namespace}\' does'
+            error = (f'Error deleting because namespace \'{namespace}\' does'
                      'not exist.')
             raise NamespaceNotExistsError
 
