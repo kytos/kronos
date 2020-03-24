@@ -2,7 +2,7 @@
 from flask import Flask
 from tests.helpers import get_controller_mock
 
-from napps.kytos.kronos.utils import InvalidNamespaceError
+from napps.kytos.kronos.utils import NamespaceError
 
 # pylint: disable=wrong-import-order,wrong-import-position
 import sys
@@ -38,13 +38,13 @@ class TestMainKronos(TestCase):
         value = '123'
         timestamp = None
 
-        mock_influx_save.side_effect = InvalidNamespaceError()
+        mock_influx_save.side_effect = NamespaceError()
 
         app = Flask(__name__)
         with app.app_context():
             response = self.napp.rest_save(namespace, value, timestamp)
             exception_name = response.json['exc_name']
-            self.assertEqual(exception_name, 'InvalidNamespaceError')
+            self.assertEqual(exception_name, 'NamespaceError')
 
     @mock.patch('napps.kytos.kronos.main.InfluxBackend.delete')
     def test_rest_delete_success_with_influx(self, mock_influx_delete):

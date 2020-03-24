@@ -3,16 +3,12 @@ import re
 from datetime import datetime
 
 
-class InvalidNamespaceError(Exception):
+class NamespaceError(Exception):
     """Exception thrown when the provided namespace is not valid."""
 
 
 class ValueConvertError(Exception):
     """Exception thrown when it is not possible convert the value to stored."""
-
-
-class NamespaceNotExistsError(Exception):
-    """Exception thrown when the provided namespace does not exist."""
 
 
 class TimestampRangeError(Exception):

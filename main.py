@@ -9,9 +9,8 @@ from kytos.core.helpers import listen_to
 from napps.kytos.kronos import settings
 from napps.kytos.kronos.backends.csvbackend import CSVBackend
 from napps.kytos.kronos.backends.influx import InfluxBackend
-from napps.kytos.kronos.utils import (InvalidNamespaceError,
-                                      NamespaceNotExistsError,
-                                      TimestampRangeError, ValueConvertError)
+from napps.kytos.kronos.utils import (NamespaceError, TimestampRangeError,
+                                      ValueConvertError)
 
 
 class Main(KytosNApp):
@@ -37,7 +36,7 @@ class Main(KytosNApp):
         """Save the data in one of the backends."""
         try:
             self.backend.save(namespace, value, timestamp)
-        except (InvalidNamespaceError, ValueConvertError) as exc:
+        except (NamespaceError, ValueConvertError) as exc:
             exc_name = exc.__class__.__name__
             return jsonify({'response': str(exc), 'exc_name': exc_name})
 
@@ -51,8 +50,7 @@ class Main(KytosNApp):
         """Delete the data in one of the backends."""
         try:
             self.backend.delete(namespace, start, end)
-        except (InvalidNamespaceError, ValueConvertError, TimestampRangeError,
-                NamespaceNotExistsError) as exc:
+        except (NamespaceError, ValueConvertError, TimestampRangeError) as exc:
             return jsonify({'response': str(exc)})
 
         return jsonify({'response': 'Values deleted.'})
@@ -73,8 +71,7 @@ class Main(KytosNApp):
         try:
             result = self.backend.get(namespace, start, end, method, fill,
                                       group)
-        except (InvalidNamespaceError, ValueConvertError, TimestampRangeError,
-                NamespaceNotExistsError) as exc:
+        except (NamespaceError, ValueConvertError, TimestampRangeError) as exc:
             return jsonify({'response': str(exc)})
 
         return jsonify({'response': result})
@@ -88,7 +85,7 @@ class Main(KytosNApp):
                               event.content['timestamp'])
             result = 'Value saved.'
             error = None
-        except (InvalidNamespaceError, ValueConvertError) as exc:
+        except (NamespaceError, ValueConvertError) as exc:
             result = None
             error = (str(exc), exc.__class__.__name__)
 
