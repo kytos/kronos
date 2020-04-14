@@ -11,10 +11,6 @@ class ValueConvertError(Exception):
     """Exception thrown when it is not possible convert the value to stored."""
 
 
-class TimestampRangeError(Exception):
-    """Exception thrown when the provided range timestamp is not valid."""
-
-
 def now():
     """Return timestamp in ISO-8601 format."""
     return datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
