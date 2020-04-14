@@ -5,10 +5,9 @@ import re
 from influxdb import InfluxDBClient, exceptions
 from kytos.core import log
 # pylint: disable=import-error,wrong-import-order
-from napps.kytos.kronos.utils import (NamespaceError, TimestampRangeError,
-                                      ValueConvertError, convert_to_iso,
-                                      iso_format_validation, now,
-                                      validate_timestamp)
+from napps.kytos.kronos.utils import (NamespaceError, ValueConvertError,
+                                      convert_to_iso, iso_format_validation,
+                                      now, validate_timestamp)
 
 
 def _query_assemble(clause, namespace, start, end, field=None,
@@ -110,7 +109,7 @@ class InfluxBackend:
 
         if start is None and end is None:
             error = 'Start and end value should not be \'None\'.'
-            raise TimestampRangeError(error)
+            raise ValueError(error)
 
         if iso_format_validation(start) is False and start is not None:
             start = convert_to_iso(start)
@@ -119,7 +118,7 @@ class InfluxBackend:
 
         if validate_timestamp(start, end) is False:
             error = 'Error to get values due end value is smaller than start.'
-            raise TimestampRangeError(error)
+            raise ValueError(error)
 
         points = self._get_points(namespace, start, end,
                                   field, method, fill, group)
@@ -142,7 +141,7 @@ class InfluxBackend:
 
         if validate_timestamp(start, end) is False:
             error = 'Error to get values due end value is smaller than start.'
-            raise TimestampRangeError(error)
+            raise ValueError(error)
 
         return self._delete_points(namespace, start, end)
 
