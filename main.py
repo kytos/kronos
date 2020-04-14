@@ -9,7 +9,8 @@ from kytos.core.helpers import listen_to
 from napps.kytos.kronos import settings
 from napps.kytos.kronos.backends.csvbackend import CSVBackend
 from napps.kytos.kronos.backends.influx import InfluxBackend
-from napps.kytos.kronos.utils import InvalidNamespaceError, ValueConvertError
+from napps.kytos.kronos.utils import (NamespaceError, TimestampRangeError,
+                                      ValueConvertError)
 
 
 class Main(KytosNApp):
@@ -35,10 +36,11 @@ class Main(KytosNApp):
         """Save the data in one of the backends."""
         try:
             self.backend.save(namespace, value, timestamp)
-        except (InvalidNamespaceError, ValueConvertError) as exc:
-            return jsonify({"response": str(exc)})
+        except (NamespaceError, ValueConvertError) as exc:
+            exc_name = exc.__class__.__name__
+            return jsonify({'response': str(exc), 'exc_name': exc_name})
 
-        return jsonify({"response": "Value saved !"})
+        return jsonify({'response': 'Value saved !'})
 
     @rest('v1/<namespace>/', methods=['DELETE'])
     @rest('v1/<namespace>/start/<start>', methods=['DELETE'])
@@ -46,13 +48,12 @@ class Main(KytosNApp):
     @rest('v1/<namespace>/<start>/<end>', methods=['DELETE'])
     def rest_delete(self, namespace, start=None, end=None):
         """Delete the data in one of the backends."""
-        log.info(start)
-        log.info(end)
-        result = self.backend.delete(namespace, start, end)
-        if result in (400, 404):
-            return jsonify({"response": "Not Found"}), 404
+        try:
+            self.backend.delete(namespace, start, end)
+        except (NamespaceError, ValueConvertError, TimestampRangeError) as exc:
+            return jsonify({'response': str(exc)})
 
-        return jsonify({"response": "Values deleted !"}), 200
+        return jsonify({'response': 'Values deleted.'})
 
     @rest('v1/namespace/', methods=['GET'])
     @rest('v1/<namespace>/', methods=['GET'])
@@ -67,11 +68,13 @@ class Main(KytosNApp):
     def rest_get(self, namespace, start=None, end=None, method=None,
                  fill=None, group=None):
         """Retrieve the data from one of the backends."""
-        result = self.backend.get(namespace, start, end, method, fill, group)
-        if result == 400 or result is None:
-            return jsonify({"response": 'Not Found'}), 404
+        try:
+            result = self.backend.get(namespace, start, end, method, fill,
+                                      group)
+        except (NamespaceError, ValueConvertError, TimestampRangeError) as exc:
+            return jsonify({'response': str(exc)})
 
-        return jsonify({"response": result}), 200
+        return jsonify({'response': result})
 
     @listen_to('kytos.kronos.save')
     def event_save(self, event):
@@ -80,9 +83,11 @@ class Main(KytosNApp):
             self.backend.save(event.content['namespace'],
                               event.content['value'],
                               event.content['timestamp'])
-        except Exception as exc:
+            result = 'Value saved.'
+            error = None
+        except (NamespaceError, ValueConvertError) as exc:
             result = None
-            error = (exc.__class__, exc.args)
+            error = (str(exc), exc.__class__.__name__)
 
         self._execute_callback(event, result, error)
 

@@ -5,11 +5,10 @@ import re
 from influxdb import InfluxDBClient, exceptions
 from kytos.core import log
 # pylint: disable=import-error,wrong-import-order
-from napps.kytos.kronos.utils import (InvalidNamespaceError,
-                                      NamespaceNotExistsError,
-                                      TimestampRangeError, ValueConvertError,
-                                      convert_to_iso, iso_format_validation,
-                                      now, validate_timestamp)
+from napps.kytos.kronos.utils import (NamespaceError, TimestampRangeError,
+                                      ValueConvertError, convert_to_iso,
+                                      iso_format_validation, now,
+                                      validate_timestamp)
 
 
 def _query_assemble(clause, namespace, start, end, field=None,
@@ -52,7 +51,7 @@ def _validate_namespace(namespace):
     if 'kytos.kronos' not in namespace:
         error = (f'Error. Namespace \'{namespace}\' most have the format '
                  '\'kytos.kronos.*\'')
-        raise InvalidNamespaceError(error)
+        raise NamespaceError(error)
 
     return True
 
@@ -107,11 +106,11 @@ class InfluxBackend:
         if not self._namespace_exists(namespace):
             error = (f'Error to get values because namespace \'{namespace}\''
                      'does not exist.')
-            raise NamespaceNotExistsError(error)
+            raise NamespaceError(error)
 
         if start is None and end is None:
             error = 'Start and end value should not be \'None\'.'
-            raise ValueError(error)
+            raise TimestampRangeError(error)
 
         if iso_format_validation(start) is False and start is not None:
             start = convert_to_iso(start)
@@ -135,21 +134,17 @@ class InfluxBackend:
 
         if _validate_namespace(namespace):
             namespace, _ = _extract_field(namespace)
-        else:
-            log.error('Error in delete method due invalid namespace value.')
-            return
 
         if not self._namespace_exists(namespace):
-            log.error(f'Error to delete because namespace \'{namespace}\' does'
-                      'not exist.')
-            return
+            error = (f'Error deleting because namespace \'{namespace}\' does'
+                     'not exist.')
+            raise NamespaceError(error)
 
         if validate_timestamp(start, end) is False:
-            log.error('Error to delete due invalid namespace')
-            return
+            error = 'Error to get values due end value is smaller than start.'
+            raise TimestampRangeError(error)
 
-        self._delete_points(namespace, start, end)
-        return
+        return self._delete_points(namespace, start, end)
 
     def _read_config(self, settings):
 
