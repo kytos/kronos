@@ -44,8 +44,8 @@ def _query_assemble(clause, namespace, start, end, field=None,
 
 def _validate_namespace(namespace):
     if not isinstance(namespace, str) or not re.match(r'\S+', namespace):
-        error = (f'Error. Namespace should be a string.')
-        raise TypeError
+        error = ('Error. Namespace should be a string.')
+        raise TypeError(error)
 
     if 'kytos.kronos' not in namespace:
         error = (f'Error. Namespace \'{namespace}\' most have the format '

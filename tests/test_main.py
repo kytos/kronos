@@ -1,14 +1,16 @@
 """Tests main module of kytos/kronos."""
+import sys
+# pylint: disable=wrong-import-order,wrong-import-position
+from unittest import TestCase, mock
+
 from flask import Flask
+
+sys.modules['influxdb'] = mock.MagicMock()
+
+from napps.kytos.kronos.main import Main
+from napps.kytos.kronos.utils import NamespaceError
 from tests.helpers import get_controller_mock
 
-from napps.kytos.kronos.utils import NamespaceError
-
-# pylint: disable=wrong-import-order,wrong-import-position
-import sys
-from unittest import TestCase, mock
-sys.modules['influxdb'] = mock.MagicMock()
-from napps.kytos.kronos.main import Main
 # pylint: enable=wrong-import-order,wrong-import-position
 
 
