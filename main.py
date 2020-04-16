@@ -75,14 +75,14 @@ class Main(KytosNApp):
     @listen_to('kytos.kronos.save')
     def event_save(self, event):
         """Save the data in one of the backends."""
+        error = None
+        result = None
+
         try:
             self.backend.save(event.content['namespace'],
                               event.content['value'],
                               event.content['timestamp'])
-            result = 'Value saved.'
-            error = None
         except (NamespaceError, ValueConvertError) as exc:
-            result = None
             error = (str(exc), exc.__class__.__name__)
 
         self._execute_callback(event, result, error)
@@ -90,24 +90,28 @@ class Main(KytosNApp):
     @listen_to('kytos.kronos.get')
     def event_get(self, event):
         """Get the data in one of the backends."""
+        error = None
+        result = None
         try:
-            self.backend.get(event.content['namespace'],
-                             event.content['timestamp'])
-        except Exception as exc:
-            result = None
-            error = (exc.__class__, exc.args)
+            result = self.backend.get(event.content['namespace'],
+                                      event.content['start'],
+                                      event.content['end'])
+        except (NamespaceError, ValueConvertError, ValueError) as exc:
+            error = (str(exc), exc.__class__.__name__)
 
         self._execute_callback(event, result, error)
 
     @listen_to('kytos.kronos.delete')
     def event_delete(self, event):
         """Delete data in one of the backends."""
+        error = None
+        result = None
         try:
             self.backend.delete(event.content['namespace'],
-                                event.content['timestamp'])
-        except Exception as exc:
-            result = None
-            error = (exc.__class__, exc.args)
+                                event.content['start'],
+                                event.content['end'])
+        except (NamespaceError, ValueConvertError, ValueError) as exc:
+            error = (str(exc), exc.__class__.__name__)
 
         self._execute_callback(event, result, error)
 
