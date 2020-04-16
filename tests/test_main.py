@@ -1,4 +1,8 @@
-"""Tests main module of kytos/kronos."""
+"""Module to test main module of kytos/kronos.
+
+Unit tests to check fail and success cases in main module.
+isort:skip_file
+"""
 import sys
 # pylint: disable=wrong-import-order,wrong-import-position
 from unittest import TestCase, mock

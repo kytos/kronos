@@ -6,6 +6,7 @@
 #
 -e git+git://github.com/kytos/python-openflow.git#egg=python-openflow  # via -r requirements/dev.in
 -e git+https://github.com/kytos/kytos.git#egg=kytos
+-e .
 alabaster==0.7.12         # via sphinx
 appdirs==1.4.3            # via virtualenv
 argh==0.26.2              # via sphinx-autobuild

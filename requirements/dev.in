@@ -1,5 +1,6 @@
 -e git+git://github.com/kytos/python-openflow.git#egg=python-openflow
 -e git+https://github.com/kytos/kytos.git#egg=kytos
+-e .
 pip-tools >= 2.0
 coverage
 pytest
