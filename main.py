@@ -1,7 +1,4 @@
-"""Main module of kytos/Cronos Kytos Network Application.
-
-Napp to store itens along time
-"""
+"""Main module of kytos/kronos Network Application."""
 from flask import jsonify
 
 from kytos.core import KytosNApp, log, rest
@@ -9,8 +6,7 @@ from kytos.core.helpers import listen_to
 from napps.kytos.kronos import settings
 from napps.kytos.kronos.backends.csvbackend import CSVBackend
 from napps.kytos.kronos.backends.influx import InfluxBackend
-from napps.kytos.kronos.utils import (NamespaceError, TimestampRangeError,
-                                      ValueConvertError)
+from napps.kytos.kronos.utils import NamespaceError, ValueConvertError
 
 
 class Main(KytosNApp):
@@ -50,7 +46,7 @@ class Main(KytosNApp):
         """Delete the data in one of the backends."""
         try:
             self.backend.delete(namespace, start, end)
-        except (NamespaceError, ValueConvertError, TimestampRangeError) as exc:
+        except (NamespaceError, ValueConvertError, ValueError) as exc:
             return jsonify({'response': str(exc)})
 
         return jsonify({'response': 'Values deleted.'})
@@ -71,7 +67,7 @@ class Main(KytosNApp):
         try:
             result = self.backend.get(namespace, start, end, method, fill,
                                       group)
-        except (NamespaceError, ValueConvertError, TimestampRangeError) as exc:
+        except (NamespaceError, ValueConvertError, ValueError) as exc:
             return jsonify({'response': str(exc)})
 
         return jsonify({'response': result})

@@ -95,7 +95,7 @@ class Linter(SimpleCommand):
             print('No linter error found.')
         except CalledProcessError:
             print('Linter check failed. Fix the error(s) above and try again.')
-            exit(-1)
+            sys.exit(-1)
 
 
 class CITest(SimpleCommand):
@@ -148,7 +148,7 @@ class EggInfo(egg_info):
         """Python wheels are much faster (no compiling)."""
         print('Installing dependencies...')
         check_call([sys.executable, '-m', 'pip', 'install', '-r',
-                    'requirements/run.in'])
+                    'requirements/run.txt'])
 
 
 class DevelopMode(develop):
