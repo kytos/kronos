@@ -36,7 +36,7 @@ class Main(KytosNApp):
             exc_name = exc.__class__.__name__
             return jsonify({'response': str(exc), 'exc_name': exc_name})
 
-        return jsonify({'response': 'Value saved !'})
+        return jsonify({'response': 'Value saved.'})
 
     @rest('v1/<namespace>/', methods=['DELETE'])
     @rest('v1/<namespace>/start/<start>', methods=['DELETE'])
@@ -82,6 +82,7 @@ class Main(KytosNApp):
             self.backend.save(event.content['namespace'],
                               event.content['value'],
                               event.content['timestamp'])
+            result = 'Value saved.'
         except (NamespaceError, ValueConvertError) as exc:
             error = (str(exc), exc.__class__.__name__)
 
@@ -110,6 +111,7 @@ class Main(KytosNApp):
             self.backend.delete(event.content['namespace'],
                                 event.content['start'],
                                 event.content['end'])
+            result = 'Value deleted.'
         except (NamespaceError, ValueConvertError, ValueError) as exc:
             error = (str(exc), exc.__class__.__name__)
 
