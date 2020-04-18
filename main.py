@@ -34,7 +34,7 @@ class Main(KytosNApp):
             self.backend.save(namespace, value, timestamp)
         except (NamespaceError, ValueConvertError) as exc:
             exc_name = exc.__class__.__name__
-            return jsonify({'response': str(exc), 'exc_name': exc_name})
+            return jsonify({'exc_name': exc_name, 'response': str(exc)})
 
         return jsonify({'response': 'Value saved.'})
 
@@ -47,7 +47,8 @@ class Main(KytosNApp):
         try:
             self.backend.delete(namespace, start, end)
         except (NamespaceError, ValueConvertError, ValueError) as exc:
-            return jsonify({'response': str(exc)})
+            exc_name = exc.__class__.__name__
+            return jsonify({'exc_name': exc_name, 'response': str(exc)})
 
         return jsonify({'response': 'Values deleted.'})
 
@@ -68,7 +69,8 @@ class Main(KytosNApp):
             result = self.backend.get(namespace, start, end, method, fill,
                                       group)
         except (NamespaceError, ValueConvertError, ValueError) as exc:
-            return jsonify({'response': str(exc)})
+            exc_name = exc.__class__.__name__
+            return jsonify({'exc_name': exc_name, 'response': str(exc)})
 
         return jsonify({'response': result})
 
@@ -84,7 +86,7 @@ class Main(KytosNApp):
                               event.content['timestamp'])
             result = 'Value saved.'
         except (NamespaceError, ValueConvertError) as exc:
-            error = (str(exc), exc.__class__.__name__)
+            error = (exc.__class__.__name__, str(exc))
 
         self._execute_callback(event, result, error)
 
@@ -98,7 +100,7 @@ class Main(KytosNApp):
                                       event.content['start'],
                                       event.content['end'])
         except (NamespaceError, ValueConvertError, ValueError) as exc:
-            error = (str(exc), exc.__class__.__name__)
+            error = (exc.__class__.__name__, str(exc))
 
         self._execute_callback(event, result, error)
 
@@ -113,7 +115,7 @@ class Main(KytosNApp):
                                 event.content['end'])
             result = 'Value deleted.'
         except (NamespaceError, ValueConvertError, ValueError) as exc:
-            error = (str(exc), exc.__class__.__name__)
+            error = (exc.__class__.__name__, str(exc))
 
         self._execute_callback(event, result, error)
 
