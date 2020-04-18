@@ -56,13 +56,13 @@ class TestMainKronos(TestCase):
     def test_rest_delete_success_with_influx(self, mock_influx_delete):
         """Test success in method rest_delete."""
         namespace = 'kytos.kronos.telemetry.switches.1.interfaces.232.bytes_in'
-        value = '123'
-        timestamp = None
+        start = 123456
+        end = 123457
 
         app = Flask(__name__)
         with app.app_context():
-            self.napp.rest_delete(namespace, value, timestamp)
-            mock_influx_delete.assert_called_with(namespace, value, timestamp)
+            self.napp.rest_delete(namespace, start, end)
+            mock_influx_delete.assert_called_with(namespace, start, end)
 
     @mock.patch('napps.kytos.kronos.main.InfluxBackend.get')
     def test_rest_get_success_with_influx(self, mock_influx_get):
@@ -82,7 +82,7 @@ class TestMainKronos(TestCase):
 
     @mock.patch('napps.kytos.kronos.main.InfluxBackend.save')
     def test_event_save_success_with_influx(self, mock_influx_save):
-        """Test success in method rest_save."""
+        """Test success in method event_save."""
         namespace = 'kytos.kronos.telemetry.switches.1.interfaces.232.bytes_in'
         value = '123'
         timestamp = None
@@ -92,7 +92,38 @@ class TestMainKronos(TestCase):
                          'value': value,
                          'timestamp': timestamp}
 
-        app = Flask(__name__)
-        with app.app_context():
-            self.napp.event_save(event)
-            mock_influx_save.assert_called_with(namespace, value, timestamp)
+        self.napp.event_save(event)
+        mock_influx_save.assert_called_with(namespace, value, timestamp)
+
+    @mock.patch('napps.kytos.kronos.main.InfluxBackend.get')
+    def test_event_get_success_with_influx(self, mock_influx_get):
+        """Test success in method event_get."""
+        namespace = ('kytos.kronos.telemetry.switches.1.interfaces.232.'
+                     'bytes_in.12')
+        start = 123456
+        end = 123457
+
+        mock_influx_get.return_value = [['1970-01-01T00:00:00.001234567Z', 12]]
+
+        event = mock.MagicMock()
+        event.content = {'namespace': namespace,
+                         'start': start,
+                         'end': end}
+
+        self.napp.event_get(event)
+        mock_influx_get.assert_called_with(namespace, start, end)
+
+    @mock.patch('napps.kytos.kronos.main.InfluxBackend.delete')
+    def test_event_delete_success_with_influx(self, mock_influx_delete):
+        """Test success in method event_delete."""
+        namespace = 'kytos.kronos.telemetry.switches.1.interfaces.232.bytes_in'
+        start = 123456
+        end = 123457
+
+        event = mock.MagicMock()
+        event.content = {'namespace': namespace,
+                         'start': start,
+                         'end': end}
+
+        self.napp.event_delete(event)
+        mock_influx_delete.assert_called_with(namespace, start, end)

@@ -34,9 +34,9 @@ class Main(KytosNApp):
             self.backend.save(namespace, value, timestamp)
         except (NamespaceError, ValueConvertError) as exc:
             exc_name = exc.__class__.__name__
-            return jsonify({'response': str(exc), 'exc_name': exc_name})
+            return jsonify({'exc_name': exc_name, 'response': str(exc)})
 
-        return jsonify({'response': 'Value saved !'})
+        return jsonify({'response': 'Value saved.'})
 
     @rest('v1/<namespace>/', methods=['DELETE'])
     @rest('v1/<namespace>/start/<start>', methods=['DELETE'])
@@ -47,7 +47,8 @@ class Main(KytosNApp):
         try:
             self.backend.delete(namespace, start, end)
         except (NamespaceError, ValueConvertError, ValueError) as exc:
-            return jsonify({'response': str(exc)})
+            exc_name = exc.__class__.__name__
+            return jsonify({'exc_name': exc_name, 'response': str(exc)})
 
         return jsonify({'response': 'Values deleted.'})
 
@@ -68,46 +69,53 @@ class Main(KytosNApp):
             result = self.backend.get(namespace, start, end, method, fill,
                                       group)
         except (NamespaceError, ValueConvertError, ValueError) as exc:
-            return jsonify({'response': str(exc)})
+            exc_name = exc.__class__.__name__
+            return jsonify({'exc_name': exc_name, 'response': str(exc)})
 
         return jsonify({'response': result})
 
     @listen_to('kytos.kronos.save')
     def event_save(self, event):
         """Save the data in one of the backends."""
+        error = None
+        result = None
+
         try:
             self.backend.save(event.content['namespace'],
                               event.content['value'],
                               event.content['timestamp'])
             result = 'Value saved.'
-            error = None
         except (NamespaceError, ValueConvertError) as exc:
-            result = None
-            error = (str(exc), exc.__class__.__name__)
+            error = (exc.__class__.__name__, str(exc))
 
         self._execute_callback(event, result, error)
 
     @listen_to('kytos.kronos.get')
     def event_get(self, event):
         """Get the data in one of the backends."""
+        error = None
+        result = None
         try:
-            self.backend.get(event.content['namespace'],
-                             event.content['timestamp'])
-        except Exception as exc:
-            result = None
-            error = (exc.__class__, exc.args)
+            result = self.backend.get(event.content['namespace'],
+                                      event.content['start'],
+                                      event.content['end'])
+        except (NamespaceError, ValueConvertError, ValueError) as exc:
+            error = (exc.__class__.__name__, str(exc))
 
         self._execute_callback(event, result, error)
 
     @listen_to('kytos.kronos.delete')
     def event_delete(self, event):
         """Delete data in one of the backends."""
+        error = None
+        result = None
         try:
             self.backend.delete(event.content['namespace'],
-                                event.content['timestamp'])
-        except Exception as exc:
-            result = None
-            error = (exc.__class__, exc.args)
+                                event.content['start'],
+                                event.content['end'])
+            result = 'Value deleted.'
+        except (NamespaceError, ValueConvertError, ValueError) as exc:
+            error = (exc.__class__.__name__, str(exc))
 
         self._execute_callback(event, result, error)
 

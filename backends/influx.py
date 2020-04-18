@@ -125,7 +125,7 @@ class InfluxBackend:
         return points
 
     def delete(self, namespace, start=None, end=None):
-        """Delete data in influxdb. Start and end most be a timestamp."""
+        """Delete data in influxdb. Start and end must be a timestamp."""
         if iso_format_validation(start) is False and start is not None:
             start = convert_to_iso(start)
         if iso_format_validation(end) is False and end is not None:
