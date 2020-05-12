@@ -12,7 +12,7 @@ from flask import Flask
 sys.modules['influxdb'] = mock.MagicMock()
 
 from napps.kytos.kronos.main import Main
-from napps.kytos.kronos.utils import NamespaceError
+from napps.kytos.kronos.utils import (NamespaceError, ValueConvertError)
 from tests.helpers import get_controller_mock
 
 # pylint: enable=wrong-import-order,wrong-import-position
@@ -39,7 +39,7 @@ class TestMainKronos(TestCase):
 
     @mock.patch('napps.kytos.kronos.main.InfluxBackend.save')
     def test_rest_save_failed_namespace_without_prefix(self, mock_influx_save):
-        """Test a error in method rest_save passing an invalid namespace."""
+        """Test fail case in method rest_save with an invalid namespace."""
         namespace = 'telemetry.switches.1.interfaces.232.bytes_in'
         value = '123'
         timestamp = None
@@ -52,6 +52,21 @@ class TestMainKronos(TestCase):
             exception_name = response.json['exc_name']
             self.assertEqual(exception_name, 'NamespaceError')
 
+    @mock.patch('napps.kytos.kronos.main.InfluxBackend.save')
+    def test_rest_save_failed_converting_value(self, mock_influx_save):
+        """Test fail case in method rest_save with an invalid value."""
+        namespace = 'telemetry.switches.1.interfaces.232.bytes_in'
+        value = '123'
+        timestamp = 'abc'
+
+        mock_influx_save.side_effect = ValueConvertError()
+
+        app = Flask(__name__)
+        with app.app_context():
+            response = self.napp.rest_save(namespace, value, timestamp)
+            exception_name = response.json['exc_name']
+            self.assertEqual(exception_name, 'ValueConvertError')
+
     @mock.patch('napps.kytos.kronos.main.InfluxBackend.delete')
     def test_rest_delete_success_with_influx(self, mock_influx_delete):
         """Test success in method rest_delete."""
@@ -63,6 +78,51 @@ class TestMainKronos(TestCase):
         with app.app_context():
             self.napp.rest_delete(namespace, start, end)
             mock_influx_delete.assert_called_with(namespace, start, end)
+
+    @mock.patch('napps.kytos.kronos.main.InfluxBackend.delete')
+    def test_rest_delete_failed_namespace_wrong_prefix(self, mock_influx_del):
+        """Test fail case in rest_delete with an invalid namespace."""
+        namespace = 'telemetry.switches.1.interfaces.232.bytes_in'
+        start = 123456
+        end = 123457
+
+        mock_influx_del.side_effect = NamespaceError()
+
+        app = Flask(__name__)
+        with app.app_context():
+            response = self.napp.rest_delete(namespace, start, end)
+            exception_name = response.json['exc_name']
+            self.assertEqual(exception_name, 'NamespaceError')
+
+    @mock.patch('napps.kytos.kronos.main.InfluxBackend.delete')
+    def test_rest_delete_failed_invalid_timestamp(self, mock_influx_del):
+        """Test fail case in method rest_delete with an invalid timestamp."""
+        namespace = 'kytos.telemetry.switches.1.interfaces.232.bytes_in'
+        start = 123456
+        end = 123457
+
+        mock_influx_del.side_effect = ValueConvertError()
+
+        app = Flask(__name__)
+        with app.app_context():
+            response = self.napp.rest_delete(namespace, start, end)
+            exception_name = response.json['exc_name']
+            self.assertEqual(exception_name, 'ValueConvertError')
+
+    @mock.patch('napps.kytos.kronos.main.InfluxBackend.delete')
+    def test_rest_delete_failed_invalid_timestamp_range(self, mock_influx_del):
+        """Test fail case in rest_delete with an invalid timestamp range."""
+        namespace = 'kytos.telemetry.switches.1.interfaces.232.bytes_in'
+        start = 22222
+        end = 11111
+
+        mock_influx_del.side_effect = ValueError()
+
+        app = Flask(__name__)
+        with app.app_context():
+            response = self.napp.rest_delete(namespace, start, end)
+            exception_name = response.json['exc_name']
+            self.assertEqual(exception_name, 'ValueError')
 
     @mock.patch('napps.kytos.kronos.main.InfluxBackend.get')
     def test_rest_get_success_with_influx(self, mock_influx_get):
@@ -79,6 +139,54 @@ class TestMainKronos(TestCase):
             self.napp.rest_get(namespace, start, end)
             mock_influx_get.assert_called_with(namespace, start, end, None,
                                                None, None)
+
+    @mock.patch('napps.kytos.kronos.main.InfluxBackend.get')
+    def test_rest_get_fail_invalid_namespace(self, mock_influx_get):
+        """Test fail case in method rest_get passing an invalid namespace."""
+        namespace = ('kronos.telemetry.switches.1.interfaces.232.'
+                     'bytes_in.12')
+        start = 123456
+        end = 123457
+
+        mock_influx_get.side_effect = NamespaceError()
+
+        app = Flask(__name__)
+        with app.app_context():
+            response = self.napp.rest_get(namespace, start, end)
+            exception_name = response.json['exc_name']
+            self.assertEqual(exception_name, 'NamespaceError')
+
+    @mock.patch('napps.kytos.kronos.main.InfluxBackend.get')
+    def test_rest_get_fail_with_invalid_timestamp(self, mock_influx_get):
+        """Test fail case in method rest_get with an invalid timestamp."""
+        namespace = ('kronos.telemetry.switches.1.interfaces.232.'
+                     'bytes_in.12')
+        start = 22222
+        end = 11111
+
+        mock_influx_get.side_effect = ValueConvertError()
+
+        app = Flask(__name__)
+        with app.app_context():
+            response = self.napp.rest_get(namespace, start, end)
+            exception_name = response.json['exc_name']
+            self.assertEqual(exception_name, 'ValueConvertError')
+
+    @mock.patch('napps.kytos.kronos.main.InfluxBackend.get')
+    def test_rest_get_fail_with_invalid_timestamp_range(self, mock_influx_get):
+        """Test fail case in rest_get with an invalid timestamp range."""
+        namespace = ('kronos.telemetry.switches.1.interfaces.232.'
+                     'bytes_in.12')
+        start = 22222
+        end = 11111
+
+        mock_influx_get.side_effect = ValueError()
+
+        app = Flask(__name__)
+        with app.app_context():
+            response = self.napp.rest_get(namespace, start, end)
+            exception_name = response.json['exc_name']
+            self.assertEqual(exception_name, 'ValueError')
 
     @mock.patch('napps.kytos.kronos.main.InfluxBackend.save')
     def test_event_save_success_with_influx(self, mock_influx_save):
