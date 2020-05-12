@@ -24,14 +24,14 @@ class TestMainKronos(TestCase):
         self.assertEqual('1970-01-01T00:00:00Z', return_value)
 
     def test_convert_to_iso_failed_with_invalid_value(self):
-        """Test fail case in method convert_to_iso with invalid value."""
+        """Test fail case in method convert_to_iso with an invalid value."""
         timestamp = 'abc'
 
         with self.assertRaises(ValueConvertError):
             convert_to_iso(timestamp)
 
     def test_convert_to_iso_failed_with_large_value(self):
-        """Test faile case in method convert_to_iso with too large value."""
+        """Test fail case in method convert_to_iso with a value too large."""
         timestamp = 10**100
 
         with self.assertRaises(ValueConvertError):
