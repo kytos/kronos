@@ -16,6 +16,7 @@ from napps.kytos.kronos.utils import (NamespaceError, ValueConvertError)
 from tests.helpers import get_controller_mock
 
 # pylint: enable=wrong-import-order,wrong-import-position
+# pylint: disable=R0904,E0012, Too many public methods
 
 
 class TestMainKronos(TestCase):
@@ -55,7 +56,7 @@ class TestMainKronos(TestCase):
     @mock.patch('napps.kytos.kronos.main.InfluxBackend.save')
     def test_rest_save_failed_converting_value(self, mock_influx_save):
         """Test fail case in method rest_save with an invalid value."""
-        namespace = 'telemetry.switches.1.interfaces.232.bytes_in'
+        namespace = 'kytos.telemetry.switches.1.interfaces.232.bytes_in'
         value = '123'
         timestamp = 'abc'
 
@@ -98,7 +99,7 @@ class TestMainKronos(TestCase):
     def test_rest_delete_failed_invalid_timestamp(self, mock_influx_del):
         """Test fail case in method rest_delete with an invalid timestamp."""
         namespace = 'kytos.telemetry.switches.1.interfaces.232.bytes_in'
-        start = 123456
+        start = 'abc'
         end = 123457
 
         mock_influx_del.side_effect = ValueConvertError()
@@ -143,8 +144,7 @@ class TestMainKronos(TestCase):
     @mock.patch('napps.kytos.kronos.main.InfluxBackend.get')
     def test_rest_get_fail_invalid_namespace(self, mock_influx_get):
         """Test fail case in method rest_get passing an invalid namespace."""
-        namespace = ('kronos.telemetry.switches.1.interfaces.232.'
-                     'bytes_in.12')
+        namespace = 'kronos.telemetry.switches.1.interfaces.232.bytes_in.12'
         start = 123456
         end = 123457
 
@@ -159,9 +159,9 @@ class TestMainKronos(TestCase):
     @mock.patch('napps.kytos.kronos.main.InfluxBackend.get')
     def test_rest_get_fail_with_invalid_timestamp(self, mock_influx_get):
         """Test fail case in method rest_get with an invalid timestamp."""
-        namespace = ('kronos.telemetry.switches.1.interfaces.232.'
+        namespace = ('kytos.kronos.telemetry.switches.1.interfaces.232.'
                      'bytes_in.12')
-        start = 22222
+        start = 'abc'
         end = 11111
 
         mock_influx_get.side_effect = ValueConvertError()
@@ -203,6 +203,56 @@ class TestMainKronos(TestCase):
         self.napp.event_save(event)
         mock_influx_save.assert_called_with(namespace, value, timestamp)
 
+    @mock.patch('napps.kytos.kronos.main.Main._execute_callback')
+    @mock.patch('napps.kytos.kronos.main.InfluxBackend.save')
+    def test_event_save_fail_with_invalid_namespace(self, mock_influx_save,
+                                                    mock_callback):
+        """Test fail case in method event_save with an invalid namespace."""
+        namespace = 'telemetry.switches.1.interfaces.232.bytes_in'
+        value = '123'
+        timestamp = None
+
+        event = mock.MagicMock()
+        event.content = {'namespace': namespace,
+                         'value': value,
+                         'timestamp': timestamp}
+
+        # Values expected to call '_execute_callback'
+        exc = NamespaceError()
+        error = (exc.__class__.__name__, str(exc))
+        result = None
+
+        # Set a exception to mocked function return value
+        mock_influx_save.side_effect = NamespaceError()
+
+        self.napp.event_save(event)
+        mock_callback.assert_called_with(event, result, error)
+
+    @mock.patch('napps.kytos.kronos.main.Main._execute_callback')
+    @mock.patch('napps.kytos.kronos.main.InfluxBackend.save')
+    def test_event_save_failed_converting_value(self, mock_influx_save,
+                                                mock_callback):
+        """Test fail case in method rest_save with an invalid value."""
+        namespace = 'kytos.telemetry.switches.1.interfaces.232.bytes_in'
+        value = '123'
+        timestamp = 'abc'
+
+        event = mock.MagicMock()
+        event.content = {'namespace': namespace,
+                         'value': value,
+                         'timestamp': timestamp}
+
+        # Values expected to call '_execute_callback'
+        exc = ValueConvertError()
+        error = (exc.__class__.__name__, str(exc))
+        result = None
+
+        # Set a exception to mocked function return value
+        mock_influx_save.side_effect = ValueConvertError()
+
+        self.napp.event_save(event)
+        mock_callback.assert_called_with(event, result, error)
+
     @mock.patch('napps.kytos.kronos.main.InfluxBackend.get')
     def test_event_get_success_with_influx(self, mock_influx_get):
         """Test success in method event_get."""
@@ -221,6 +271,83 @@ class TestMainKronos(TestCase):
         self.napp.event_get(event)
         mock_influx_get.assert_called_with(namespace, start, end)
 
+    @mock.patch('napps.kytos.kronos.main.Main._execute_callback')
+    @mock.patch('napps.kytos.kronos.main.InfluxBackend.get')
+    def test_event_get_fail_with_invalid_namespace(self, mock_influx_get,
+                                                   mock_callback):
+        """Test fail case in method event_get with an invalid namespace."""
+        namespace = 'telemetry.switches.1.interfaces.232.bytes_in'
+        start = 123456
+        end = 123457
+
+        event = mock.MagicMock()
+        event.content = {'namespace': namespace,
+                         'start': start,
+                         'end': end}
+
+        # Values expected to call '_execute_callback'
+        exc = NamespaceError()
+        error = (exc.__class__.__name__, str(exc))
+        result = None
+
+        # Set a exception to mocked function return value
+        mock_influx_get.side_effect = NamespaceError()
+
+        self.napp.event_get(event)
+        mock_callback.assert_called_with(event, result, error)
+
+    @mock.patch('napps.kytos.kronos.main.Main._execute_callback')
+    @mock.patch('napps.kytos.kronos.main.InfluxBackend.get')
+    def test_event_get_fail_with_invalid_timestamp(self, mock_influx_get,
+                                                   mock_callback):
+        """Test fail case in method event_get with an invalid value."""
+        namespace = ('kronos.telemetry.switches.1.interfaces.232.'
+                     'bytes_in.12')
+        start = 'abc'
+        end = 22222
+
+        event = mock.MagicMock()
+        event.content = {'namespace': namespace,
+                         'start': start,
+                         'end': end}
+
+        # Values expected to call '_execute_callback'
+        exc = ValueConvertError()
+        error = (exc.__class__.__name__, str(exc))
+        result = None
+
+        # Set a exception to mocked function return value
+        mock_influx_get.side_effect = ValueConvertError()
+
+        self.napp.event_get(event)
+        mock_callback.assert_called_with(event, result, error)
+
+    @mock.patch('napps.kytos.kronos.main.Main._execute_callback')
+    @mock.patch('napps.kytos.kronos.main.InfluxBackend.get')
+    def test_event_get_fail_with_invalid_timestamp_range(self, mock_influx_get,
+                                                         mock_callback):
+        """Test fail case in method event_get with an invalid value."""
+        namespace = ('kronos.telemetry.switches.1.interfaces.232.'
+                     'bytes_in.12')
+        start = 22222
+        end = 11111
+
+        event = mock.MagicMock()
+        event.content = {'namespace': namespace,
+                         'start': start,
+                         'end': end}
+
+        # Values expected to call '_execute_callback'
+        exc = ValueError()
+        error = (exc.__class__.__name__, str(exc))
+        result = None
+
+        # Set a exception to mocked function return value
+        mock_influx_get.side_effect = ValueError()
+
+        self.napp.event_get(event)
+        mock_callback.assert_called_with(event, result, error)
+
     @mock.patch('napps.kytos.kronos.main.InfluxBackend.delete')
     def test_event_delete_success_with_influx(self, mock_influx_delete):
         """Test success in method event_delete."""
@@ -235,3 +362,54 @@ class TestMainKronos(TestCase):
 
         self.napp.event_delete(event)
         mock_influx_delete.assert_called_with(namespace, start, end)
+
+    @mock.patch('napps.kytos.kronos.main.Main._execute_callback')
+    @mock.patch('napps.kytos.kronos.main.InfluxBackend.delete')
+    def test_event_delete_failed_namespace_wrong_prefix(self, mock_influx_del,
+                                                        mock_callback):
+        """Test fail case in method event_delete with an invalid namespace."""
+        namespace = 'telemetry.switches.1.interfaces.232.bytes_in'
+        start = 123456
+        end = 123457
+
+        event = mock.MagicMock()
+        event.content = {'namespace': namespace,
+                         'start': start,
+                         'end': end}
+
+        # Values expected to call '_execute_callback'
+        exc = NamespaceError()
+        error = (exc.__class__.__name__, str(exc))
+        result = None
+
+        # Set a exception to mocked function return value
+        mock_influx_del.side_effect = NamespaceError()
+
+        self.napp.event_delete(event)
+        mock_callback.assert_called_with(event, result, error)
+
+    @mock.patch('napps.kytos.kronos.main.Main._execute_callback')
+    @mock.patch('napps.kytos.kronos.main.InfluxBackend.delete')
+    def test_event_delete_fail_invalid_timestamp(self, mock_influx_del,
+                                                 mock_callback):
+        """Test fail case in method rest_delete with an invalid timestamp."""
+        namespace = 'kytos.telemetry.switches.1.interfaces.232.bytes_in'
+
+        start = 'abc'
+        end = 22222
+
+        event = mock.MagicMock()
+        event.content = {'namespace': namespace,
+                         'start': start,
+                         'end': end}
+
+        # Values expected to call '_execute_callback'
+        exc = ValueConvertError()
+        error = (exc.__class__.__name__, str(exc))
+        result = None
+
+        # Set a exception to mocked function return value
+        mock_influx_del.side_effect = ValueConvertError()
+
+        self.napp.event_delete(event)
+        mock_callback.assert_called_with(event, result, error)
