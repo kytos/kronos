@@ -5,9 +5,10 @@ import re
 from influxdb import InfluxDBClient, exceptions
 from kytos.core import log
 # pylint: disable=import-error,wrong-import-order
-from napps.kytos.kronos.utils import (NamespaceError, ValueConvertError,
-                                      convert_to_iso, iso_format_validation,
-                                      now, validate_timestamp)
+from napps.kytos.kronos.utils import (BackendError, NamespaceError,
+                                      ValueConvertError, convert_to_iso,
+                                      iso_format_validation, now,
+                                      validate_timestamp)
 
 
 def _query_assemble(clause, namespace, start, end, field=None,
@@ -15,7 +16,7 @@ def _query_assemble(clause, namespace, start, end, field=None,
 
     if clause.upper() == 'SELECT':
         if field is None:
-            clause += f' * FROM {namespace}'
+            clause += f' * FROM "{namespace}"'
         else:
             if method is None:
                 clause += f' {field} FROM "{namespace}"'
@@ -25,7 +26,9 @@ def _query_assemble(clause, namespace, start, end, field=None,
     elif clause.upper() == 'DELETE':
         clause += f' FROM "{namespace}"'
     else:
-        log.error(f'Error. Invalid clause "{clause}".')
+        error = f'Error. Invalid clause "{clause}".'
+        log.error(error)
+        raise BackendError(error)
 
     time_clause = ' WHERE time '
     if start is not None:
@@ -33,7 +36,7 @@ def _query_assemble(clause, namespace, start, end, field=None,
         if end is not None:
             clause += f' AND time <=\'{str(end)}\''
     elif start is None and end is not None:
-        clause += f'{time_clause} <= \'{str(end)}\''
+        clause += f'{time_clause}<= \'{str(end)}\''
 
     if group is not None:
         clause += f' GROUP BY time({group})'
@@ -61,7 +64,7 @@ def _extract_field(namespace):
     return namespace, field
 
 
-class InvalidQuery(Exception):
+class InvalidQueryError(Exception):
     """Exception thrown when the assembled query is not valid."""
 
 
@@ -177,16 +180,15 @@ class InfluxBackend:
         self._client.create_database(self._database)
 
     def _write_endpoints(self, data, create_database=True):
-
         if not self._get_database() and create_database:
             self._create_database()
 
         try:
             self._client.write_points(data)
-        except exceptions.InfluxDBClientError as error:
+        except exceptions.InfluxDBClientError as exc:
+            error = f'Error inserting data to InfluxDB: {str(exc)}'
             log.error(error)
-        except InvalidQuery:
-            log.error('Error inserting data to InfluxDB.')
+            raise BackendError(error)
 
     def _get_database(self):
         """Verify if a database exists."""
@@ -214,7 +216,7 @@ class InfluxBackend:
             return results
         except KeyError:
             error = (f'Error. Query {query} not valid')
-            raise InvalidQuery(error)
+            raise InvalidQueryError(error)
 
     def _namespace_exists(self, namespace):
 
