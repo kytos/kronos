@@ -32,11 +32,11 @@ def _query_assemble(clause, namespace, start, end, field=None,
 
     time_clause = ' WHERE time '
     if start is not None:
-        clause += f'{time_clause} >= \'{str(start)}\''
+        clause += f"{time_clause} >= '{str(start)}'"
         if end is not None:
-            clause += f' AND time <=\'{str(end)}\''
+            clause += f" AND time <='{str(end)}'"
     elif start is None and end is not None:
-        clause += f'{time_clause}<= \'{str(end)}\''
+        clause += f"{time_clause}<= '{str(end)}'"
 
     if group is not None:
         clause += f' GROUP BY time({group})'
