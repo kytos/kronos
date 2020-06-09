@@ -3,6 +3,10 @@ import re
 from datetime import datetime
 
 
+class BackendError(Exception):
+    """Exception thrown when a non specific error occurs in backend."""
+
+
 class NamespaceError(Exception):
     """Exception thrown when the provided namespace is not valid."""
 
