@@ -3,7 +3,7 @@
   "username": "kytos",
   "name": "kronos",
   "description": "NApp to store time series data",
-  "version": "0.8",
+  "version": "0.9",
   "napp_dependencies": [],
   "license": "",
   "tags": [],
