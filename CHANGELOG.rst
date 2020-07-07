@@ -28,17 +28,19 @@ Changed
 =======
 
 
-[0.9] - 2020-04-19
+[1.0] - 2020-07-07
 ****************************************
 
 Added
 =====
  - Added failure and success test cases to main and utils modules.
+ - Added ``@tags`` decorator to run tests by type and size.
 
 Changed
 =======
  - Replace kytos/kronos specific exception TimestampRangeError by a ValueError.
  - Refactor methods of main and utils to return values and handle exceptions.
+ - Refactor InfluxDB backend tests.
 
 [0.8] - 2020-04-02
 ****************************************
