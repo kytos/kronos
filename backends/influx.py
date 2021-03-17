@@ -88,7 +88,9 @@ class InfluxBackend:
             raise ValueConvertError(error)
 
         timestamp = timestamp or now()
-        if iso_format_validation(timestamp) is False:
+
+        if iso_format_validation(timestamp) is False \
+                or isinstance(timestamp, (int, float)):
             timestamp = convert_to_iso(timestamp)
 
         data = [{
