@@ -204,8 +204,8 @@ class TestInfluxBackend(TestCase):
                 '_write_endpoints')
     def test_save_success(self, mock_influx_write_endpoints):
         """Test to check the success in data storage in Influx Backend."""
-        namespace = 'kytos.kronos.telemetry.switches.1.interfaces.232.bytes_in'
-        value = '1234'
+        namespace = 'kytos.kronos.telemetry.switches.1.interfaces.232'
+        value = {'bytes_in': 1234}
         timestamp = '0'
         self.backend.save(namespace, value, timestamp)
 
@@ -222,8 +222,8 @@ class TestInfluxBackend(TestCase):
 
     def test_save_fail_invalid_value(self):
         """Test fail case in save with invalid value."""
-        namespace = 'kytos.kronos.telemetry.switches.1.interfaces.232.bytes_in'
-        value = 'abc'
+        namespace = 'kytos.kronos.telemetry.switches.1.interfaces.232'
+        value = {'bytes_in': 'abc'}
         timestamp = '1970-01-02T10:17:36Z'
 
         with self.assertRaises(ValueConvertError):
