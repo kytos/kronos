@@ -76,27 +76,28 @@ class InfluxBackend:
         self._read_config(settings)
         self._start_client()
 
-    def save(self, namespace, value, timestamp=None):
+    def save(self, namespace, data_to_save, timestamp=None):
         """Insert data on influxdb."""
-        if _validate_namespace(namespace):
-            namespace, field = _extract_field(namespace)
-
         try:
-            value = float(value)
+            for key, stat in data_to_save.items():
+                data_to_save[key] = float(stat)
         except ValueError:
-            error = f'Is not possible convert value \'{value}\' to float.'
+            error = (f'It is not possible convert the sent to be saved '
+                     'to float.')
             raise ValueConvertError(error)
+
+        _validate_namespace(namespace)
 
         timestamp = timestamp or now()
 
-        if iso_format_validation(timestamp) is False \
-                or isinstance(timestamp, (int, float)):
+        if isinstance(timestamp, (int, float)) or \
+           iso_format_validation(timestamp) is False:
             timestamp = convert_to_iso(timestamp)
 
         data = [{
             'measurement': namespace,
             'time': timestamp,
-            'fields': {field: value}
+            'fields': data_to_save
         }]
 
         return self._write_endpoints(data)
