@@ -6,9 +6,8 @@ from influxdb import InfluxDBClient, exceptions
 from kytos.core import log
 # pylint: disable=import-error,wrong-import-order
 from napps.kytos.kronos.utils import (BackendError, NamespaceError,
-                                      ValueConvertError, convert_to_iso,
-                                      iso_format_validation, now,
-                                      validate_timestamp)
+                                      convert_to_iso, iso_format_validation,
+                                      now, validate_timestamp)
 
 
 def _query_assemble(clause, namespace, start, end, field=None,
@@ -82,9 +81,9 @@ class InfluxBackend:
             for key, stat in data_to_save.items():
                 data_to_save[key] = float(stat)
         except ValueError:
-            error = (f'It is not possible convert the sent to be saved '
-                     'to float.')
-            raise ValueConvertError(error)
+            error = (f"Could not convert {type(stat)} to float: '{stat}' "
+                     f"for key '{key}'.")
+            raise ValueError(error)
 
         _validate_namespace(namespace)
 

@@ -11,10 +11,6 @@ class NamespaceError(Exception):
     """Exception thrown when the provided namespace is not valid."""
 
 
-class ValueConvertError(Exception):
-    """Exception thrown when it is not possible convert the value to stored."""
-
-
 def now():
     """Return timestamp in ISO-8601 format."""
     return datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
@@ -39,11 +35,11 @@ def convert_to_iso(timestamp):
     except ValueError:
         error = f'Error: Timestamp value \'{timestamp}\' is not convertible'\
                  ' to ISO-8601 format.'
-        raise ValueConvertError(error)
+        raise ValueError(error)
     except OverflowError:
         error = f'Error: Timestamp \'{timestamp}\' float value is too '\
                  'large to be used as datetime.'
-        raise ValueConvertError(error)
+        raise ValueError(error)
 
 
 def iso_format_validation(timestamp):
