@@ -4,8 +4,7 @@ Unit tests to check fail and success cases in utils module.
 """
 from unittest import TestCase
 
-from napps.kytos.kronos.utils import (ValueConvertError, convert_to_iso,
-                                      iso_format_validation,
+from napps.kytos.kronos.utils import (convert_to_iso, iso_format_validation,
                                       validate_timestamp)
 
 
@@ -27,14 +26,14 @@ class TestMainKronos(TestCase):
         """Test fail case in method convert_to_iso with an invalid value."""
         timestamp = 'abc'
 
-        with self.assertRaises(ValueConvertError):
+        with self.assertRaises(ValueError):
             convert_to_iso(timestamp)
 
     def test_convert_to_iso_failed_with_large_value(self):
         """Test fail case in method convert_to_iso with a value too large."""
         timestamp = 10**100
 
-        with self.assertRaises(ValueConvertError):
+        with self.assertRaises(ValueError):
             convert_to_iso(timestamp)
 
     def test_validate_timestamp_success(self):

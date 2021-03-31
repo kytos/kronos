@@ -15,8 +15,7 @@ sys.modules['influxdb'] = mock.MagicMock()
 sys.modules['influxdb.exceptions'] = mock.MagicMock()
 
 import napps.kytos.kronos.backends.influx as influx
-from napps.kytos.kronos.utils import (BackendError, NamespaceError,
-                                      ValueConvertError)
+from napps.kytos.kronos.utils import (BackendError, NamespaceError)
 
 # pylint: enable=wrong-import-order,wrong-import-position
 # pylint: disable=R0904,E0012, Too many public methods
@@ -226,7 +225,7 @@ class TestInfluxBackend(TestCase):
         value = {'bytes_in': 'abc'}
         timestamp = '1970-01-02T10:17:36Z'
 
-        with self.assertRaises(ValueConvertError):
+        with self.assertRaises(ValueError):
             self.backend.save(namespace, value, timestamp)
 
     @mock.patch('napps.kytos.kronos.backends.influx.InfluxBackend.'

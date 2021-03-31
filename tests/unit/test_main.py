@@ -12,7 +12,7 @@ from flask import Flask
 sys.modules['influxdb'] = mock.MagicMock()
 
 from napps.kytos.kronos.main import Main
-from napps.kytos.kronos.utils import (NamespaceError, ValueConvertError)
+from napps.kytos.kronos.utils import (NamespaceError)
 from tests.helpers import get_controller_mock
 
 # pylint: enable=wrong-import-order,wrong-import-position
@@ -60,13 +60,13 @@ class TestMainKronos(TestCase):
         value = '123'
         timestamp = 'abc'
 
-        mock_influx_save.side_effect = ValueConvertError()
+        mock_influx_save.side_effect = ValueError()
 
         app = Flask(__name__)
         with app.app_context():
             response = self.napp.rest_save(namespace, value, timestamp)
             exception_name = response.json['exc_name']
-            self.assertEqual(exception_name, 'ValueConvertError')
+            self.assertEqual(exception_name, 'ValueError')
 
     @mock.patch('napps.kytos.kronos.main.InfluxBackend.delete')
     def test_rest_delete_success_with_influx(self, mock_influx_delete):
@@ -102,13 +102,13 @@ class TestMainKronos(TestCase):
         start = 'abc'
         end = 123457
 
-        mock_influx_del.side_effect = ValueConvertError()
+        mock_influx_del.side_effect = ValueError()
 
         app = Flask(__name__)
         with app.app_context():
             response = self.napp.rest_delete(namespace, start, end)
             exception_name = response.json['exc_name']
-            self.assertEqual(exception_name, 'ValueConvertError')
+            self.assertEqual(exception_name, 'ValueError')
 
     @mock.patch('napps.kytos.kronos.main.InfluxBackend.delete')
     def test_rest_delete_failed_invalid_timestamp_range(self, mock_influx_del):
@@ -164,13 +164,13 @@ class TestMainKronos(TestCase):
         start = 'abc'
         end = 11111
 
-        mock_influx_get.side_effect = ValueConvertError()
+        mock_influx_get.side_effect = ValueError()
 
         app = Flask(__name__)
         with app.app_context():
             response = self.napp.rest_get(namespace, start, end)
             exception_name = response.json['exc_name']
-            self.assertEqual(exception_name, 'ValueConvertError')
+            self.assertEqual(exception_name, 'ValueError')
 
     @mock.patch('napps.kytos.kronos.main.InfluxBackend.get')
     def test_rest_get_fail_with_invalid_timestamp_range(self, mock_influx_get):
@@ -243,12 +243,12 @@ class TestMainKronos(TestCase):
                          'timestamp': timestamp}
 
         # Values expected to call '_execute_callback'
-        exc = ValueConvertError()
+        exc = ValueError()
         error = (exc.__class__.__name__, str(exc))
         result = None
 
         # Set a exception to mocked function return value
-        mock_influx_save.side_effect = ValueConvertError()
+        mock_influx_save.side_effect = ValueError()
 
         self.napp.event_save(event)
         mock_callback.assert_called_with(event, result, error)
@@ -312,12 +312,12 @@ class TestMainKronos(TestCase):
                          'end': end}
 
         # Values expected to call '_execute_callback'
-        exc = ValueConvertError()
+        exc = ValueError()
         error = (exc.__class__.__name__, str(exc))
         result = None
 
         # Set a exception to mocked function return value
-        mock_influx_get.side_effect = ValueConvertError()
+        mock_influx_get.side_effect = ValueError()
 
         self.napp.event_get(event)
         mock_callback.assert_called_with(event, result, error)
@@ -404,12 +404,12 @@ class TestMainKronos(TestCase):
                          'end': end}
 
         # Values expected to call '_execute_callback'
-        exc = ValueConvertError()
+        exc = ValueError()
         error = (exc.__class__.__name__, str(exc))
         result = None
 
         # Set a exception to mocked function return value
-        mock_influx_del.side_effect = ValueConvertError()
+        mock_influx_del.side_effect = ValueError()
 
         self.napp.event_delete(event)
         mock_callback.assert_called_with(event, result, error)
