@@ -5,8 +5,12 @@ from kytos.core import KytosNApp, log, rest
 from kytos.core.helpers import listen_to
 from napps.kytos.kronos import settings
 from napps.kytos.kronos.backends.csvbackend import CSVBackend
-from napps.kytos.kronos.backends.influx import InfluxBackend
 from napps.kytos.kronos.utils import NamespaceError
+
+# If backend is set as InfluxDB and the module is not available
+# we should let the ModuleNotFoundError be caught on `controller.load_napp()`
+if settings.DEFAULT_BACKEND.lower() == 'influxdb':
+    from napps.kytos.kronos.backends.influx import InfluxBackend
 
 
 class Main(KytosNApp):
@@ -19,12 +23,26 @@ class Main(KytosNApp):
 
     def setup(self):
         """Init method for the napp."""
-        log.info("Time Series NApp started.")
+        log.info("Kronos NApp started.")
 
-        if settings.DEFAULT_BACKEND == 'INFLUXDB':
+        if settings.DEFAULT_BACKEND.lower() == 'influxdb':
             self.backend = InfluxBackend(settings)
-        elif settings.DEFAULT_BACKEND == 'CSV':
+        elif settings.DEFAULT_BACKEND.lower() == 'csv':
             self.backend = CSVBackend(settings)
+
+    def execute(self):
+        """Run after the setup method execution.
+
+        You can also use this method in loop mode if you add to the above setup
+        method a line like the following example:
+
+            self.execute_as_loop(30)  # 30-second interval.
+        """
+        log.info("Executing Kronos NApp!")
+
+    def shutdown(self):
+        """Execute before the NApp is unloaded."""
+        log.info("Kronos NApp is shutting down.")
 
     @rest('v1/<namespace>/<value>', methods=['POST'])
     @rest('v1/<namespace>/<value>/<timestamp>', methods=['POST'])
@@ -129,17 +147,3 @@ class Main(KytosNApp):
         except TypeError as exception:
             log.error(f'Bad callback function {event.content["callback"]}!')
             log.error(exception)
-
-    def execute(self):
-        """Run after the setup method execution.
-
-        You can also use this method in loop mode if you add to the above setup
-        method a line like the following example:
-
-            self.execute_as_loop(30)  # 30-second interval.
-        """
-        log.info("EXECUTING !")
-
-    def shutdown(self):
-        """Execute before tha NApp is unloaded."""
-        log.info("Time Series NApp is shutting down.")
