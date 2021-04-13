@@ -64,7 +64,7 @@ class Main(KytosNApp):
         """Delete the data in one of the backends."""
         try:
             self.backend.delete(namespace, start, end)
-        except (NamespaceError, ValueError, ValueError) as exc:
+        except (NamespaceError, ValueError) as exc:
             exc_name = exc.__class__.__name__
             return jsonify({'exc_name': exc_name, 'response': str(exc)})
 
@@ -86,7 +86,7 @@ class Main(KytosNApp):
         try:
             result = self.backend.get(namespace, start, end, method, fill,
                                       group)
-        except (NamespaceError, ValueError, ValueError) as exc:
+        except (NamespaceError, ValueError) as exc:
             exc_name = exc.__class__.__name__
             return jsonify({'exc_name': exc_name, 'response': str(exc)})
 
@@ -117,7 +117,7 @@ class Main(KytosNApp):
             result = self.backend.get(event.content['namespace'],
                                       event.content['start'],
                                       event.content['end'])
-        except (NamespaceError, ValueError, ValueError) as exc:
+        except (NamespaceError, ValueError) as exc:
             error = (exc.__class__.__name__, str(exc))
 
         self._execute_callback(event, result, error)
@@ -132,7 +132,7 @@ class Main(KytosNApp):
                                 event.content['start'],
                                 event.content['end'])
             result = 'Value deleted.'
-        except (NamespaceError, ValueError, ValueError) as exc:
+        except (NamespaceError, ValueError) as exc:
             error = (exc.__class__.__name__, str(exc))
 
         self._execute_callback(event, result, error)
