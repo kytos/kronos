@@ -3,11 +3,15 @@ import re
 from datetime import datetime
 
 
-class BackendError(Exception):
+class KronosException(Exception):
+    """Base exception to be inherited by other Kronos exceptions."""
+
+
+class BackendError(KronosException):
     """Exception thrown when a non specific error occurs in backend."""
 
 
-class NamespaceError(Exception):
+class NamespaceError(KronosException):
     """Exception thrown when the provided namespace is not valid."""
 
 
