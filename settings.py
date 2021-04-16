@@ -7,7 +7,8 @@ BACKENDS['INFLUXDB'] = {
     'PASS': 'bar',
     'PORT': 8086,
     'HOST': 'localhost',
-    'DBNAME': 'teste_kytos'
+    'DBNAME': 'kytos',
+    'POOL_SIZE': 100
 }
 BACKENDS['CSV'] = {
     'USER': 'foo',
