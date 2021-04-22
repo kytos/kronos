@@ -156,7 +156,8 @@ class InfluxBackend:
                   'PORT': '8086',
                   'DBNAME': None,
                   'USER': None,
-                  'PASS': None}
+                  'PASS': None,
+                  'POOL_SIZE': 100}
         config = settings.BACKENDS.get('INFLUXDB')
 
         for key in params:
@@ -170,13 +171,15 @@ class InfluxBackend:
         self._username = params['USER']
         self._password = params['PASS']
         self._database = params['DBNAME']
+        self._pool_size = params['POOL_SIZE']
 
     def _start_client(self):
         self._client = InfluxDBClient(host=self._host,
                                       port=self._port,
                                       username=self._username,
                                       password=self._password,
-                                      database=self._database)
+                                      database=self._database,
+                                      pool_size=self._pool_size)
 
     def _create_database(self):
         self._client.create_database(self._database)
