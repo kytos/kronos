@@ -33,19 +33,20 @@ Changed
 
 Added
 =====
- - Added support to influx backend save a dictionary. This modification
-   reduces the number of events received from NApp 'kytos/of_stats'.
+- Added support to influx backend save a dictionary. This modification
+  reduces the number of events received from NApp ``kytos/of_stats``.
 
 Changed
 =======
- - Replace 'ValueConvertError' by 'ValueError' python exception.
+- Replace ``ValueConvertError`` by ``ValueError`` Python exception.
 
 Fixed
 =====
- - Adjust main module to only import influx backend module when the backend is
-   setted in 'settings.py'.
+- Adjusted the main module to only import the InfluxDB backend module when
+  this backend is set in ``settings.py``.
+- Increase the connection pool size of InfluxDB client to remove warnings.
 
- - Increase the connection pool size of InfluxDB client to remove warnings. 
+
 [1.0] - 2020-07-07
 ******************
 
